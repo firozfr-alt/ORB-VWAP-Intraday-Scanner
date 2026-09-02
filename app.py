@@ -69,7 +69,7 @@ st.sidebar.caption("Example: 2.0 means today's 9:15-9:20 volume is 200% higher t
 auto_refresh = st.sidebar.checkbox("Enable Auto-Refresh (every 60s)", value=False)
 if auto_refresh:
     st.sidebar.info("Auto-refresh active.")
-    st.experimental_fragment(run_every=60)
+    st.fragment(run_every=60)
 
 # ==========================================
 # 3. 5-MIN RVOL & VWAP ENGINE
