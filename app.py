@@ -61,7 +61,7 @@ st.markdown("""
         letter-spacing: 0.2px;
     }
 
-    /* Global Outlook & Summary Card Style */
+    /* Macro Catalyst Summary Card Style */
     .summary-card {
         background: linear-gradient(135deg, rgba(30, 58, 138, 0.5) 0%, rgba(15, 23, 42, 0.95) 100%);
         border: 1px solid rgba(59, 130, 246, 0.4);
@@ -203,17 +203,17 @@ for i, (name, val) in enumerate(indices_data.items()):
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. GLOBAL INFLUENCES & NEXT-SESSION EXECUTION MATRIX
+# 3. GLOBAL MACRO & MARKET CATALYST ENGINE
 # ==========================================
 st.markdown("""
 <div class="summary-card">
-    <h3 class="summary-title">🔮 Global Market Context & Next-Session Execution Matrix</h3>
+    <h3 class="summary-title">🌐 Global Macro & Market Catalyst Engine</h3>
     <p class="summary-text">
-        • <b>Global Markets:</b> Overnight Wall Street equities recovered partially after initial tech/energy volatility, with easing bond yields.<br>
-        • <b>Indian Market Reaction:</b> Domestic indices are tracking global stabilization cues, expected to open cautiously near key support structures.<br>
-        • <b>Market Trend & Behavior:</b> Consolidation mode with sector divergence; expect choppy early price action and intraday range-bound swings.<br>
-        • <b>Tactical Action Plan:</b> Take long setups only on confirmed Opening Range breakouts holding above VWAP with strong RVOL volume spikes.<br>
-        • <b>Risk & Discipline:</b> Avoid chasing erratic wicks; enforce strict stop-losses at the opposite range extreme or ATR boundary.
+        • <b>Global Macro Cues:</b> Track overnight Wall Street futures, US Treasury yields, and Dollar Index ($DXY$) shifts steering emerging market sentiment.<br>
+        • <b>Commodity & Currency Impact:</b> Monitor Brent Crude volatility and USD-INR stability as primary drivers of domestic input costs and import inflation.<br>
+        • <b>Institutional Flow Dynamics:</b> Evaluate net FII vs. DII cash and derivative positioning; institutional delta flows dictate near-term trend continuity.<br>
+        • <b>Quantitative Z-Score & Beta:</b> Measure statistical deviation from 50-day moving averages and index beta expansion to spot overextended market extremes.<br>
+        • <b>Catalyst & Volume Watch:</b> Track Relative Volume (RVOL) spikes against benchmark structural pivot barriers to confirm genuine breakout momentum.
     </p>
 </div>
 """, unsafe_allow_html=True)
