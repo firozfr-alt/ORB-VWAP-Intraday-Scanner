@@ -10,7 +10,7 @@ import ta
 # 1. PAGE CONFIGURATION & STYLING
 # ==========================================
 st.set_page_config(
-    page_title="Pro Trading Screener (Multi-Strategy)",
+    page_title="Institutional Trading Platform",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -19,14 +19,57 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stDataFrame { border-radius: 8px; overflow: hidden; }
+    .metric-card {
+        background-color: #1e2530;
+        border: 1px solid #2d3748;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ Pro Indian Equity Screener: Intraday & Swing")
-st.caption("Multi-strategy institutional platform featuring Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing setups.")
+st.title("⚡ Institutional Multi-Strategy Screener")
+st.caption("Advanced live market platform featuring Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing models.")
 
 # ==========================================
-# 2. WATCHLISTS & SIDEBAR CONTROLS
+# 2. FETCH LIVE MARKET INDICES (NIFTY & BANK NIFTY)
+# ==========================================
+@st.cache_data(ttl=60)
+def get_market_indices():
+    indices = {"Nifty 50": "^NSEI", "Bank Nifty": "^NSEBANK"}
+    data = {}
+    for name, ticker in indices.items():
+        try:
+            t = yf.Ticker(ticker)
+            hist = t.history(period="2d")
+            if len(hist) >= 2:
+                current = float(hist["Close"].iloc[-1])
+                prev = float(hist["Close"].iloc[-2])
+                change = current - prev
+                pct = (change / prev) * 100
+                trend = "Bullish 🟢" if change >= 0 else "Bearish 🔴"
+                data[name] = {"price": round(current, 2), "change": round(pct, 2), "trend": trend}
+        except Exception:
+            data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral"}
+    return data
+
+indices_data = get_market_indices()
+
+# Display Live Market Ticker Bar
+cols = st.columns(2)
+for i, (name, val) in enumerate(indices_data.items()):
+    with cols[i]:
+        st.metric(
+            label=f"{name} Live Index",
+            value=f"₹{val['price']:,}",
+            delta=f"{val['change']}% ({val['trend']})"
+        )
+
+st.markdown("---")
+
+# ==========================================
+# 3. WATCHLISTS & SIDEBAR CONTROLS
 # ==========================================
 WATCHLIST_PRESETS = {
     "Nifty 50 Core": [
@@ -73,13 +116,9 @@ st.sidebar.subheader("Swing Filters")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
-# 3. ENGINES (INTRADAY 15M, 5M & SWING)
+# 4. TECHNICAL ENGINES
 # ==========================================
 def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
-    """
-    timeframe: '15m' for 15-min clean ORB (9:15-9:30)
-              '5m' for 5-min candle-close confirmed ORB (9:15-9:20)
-    """
     try:
         stock = yf.Ticker(ticker_symbol)
         df = stock.history(period="14d", interval=timeframe)
@@ -93,52 +132,36 @@ def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
         else:
             df.index = df.index.tz_convert(ist)
 
-        # Historical Opening Volume Baseline
         first_candles = df.groupby(df.index.date).first()
         avg_opening_volume = first_candles['Volume'].iloc[:-1].mean()
 
         latest_date = df.index[-1].date()
         today_df = df[df.index.date == latest_date].copy()
 
-        # Check required bars based on timeframe
-        min_bars_required = 2 if timeframe == '15m' else 2
-        if len(today_df) < min_bars_required:
+        if len(today_df) < 2:
             return {"error": "Waiting for range completion."}
 
+        or_bar = today_df.iloc[0]
+        or_high = float(or_bar["High"])
+        or_low = float(or_bar["Low"])
+        today_opening_vol = float(or_bar["Volume"])
+
         if timeframe == '15m':
-            # 15-min range: First candle covers 9:15-9:30
-            or_bar = today_df.iloc[0]
-            or_high = float(or_bar["High"])
-            or_low = float(or_bar["Low"])
-            today_opening_vol = float(or_bar["Volume"])
-            
-            # Latest completed bar for check
             latest = today_df.iloc[-1]
             ltp = float(latest["Close"])
-            # For 15m, check if current/latest close breaks range
             breakout_cond = (ltp > or_high)
             breakdown_cond = (ltp < or_low)
         else:
-            # 5-min range: First bar is 9:15-9:20
-            or_bar = today_df.iloc[0]
-            or_high = float(or_bar["High"])
-            or_low = float(or_bar["Low"])
-            today_opening_vol = float(or_bar["Volume"])
-
-            # Strict Candle Close Confirmation: Inspect second bar onwards
             sub_candles = today_df.iloc[1:]
             if sub_candles.empty:
                 return {"error": "Waiting for breakout candle close."}
-            
             latest = sub_candles.iloc[-1]
             ltp = float(latest["Close"])
-            # Require the 5-min candle CLOSE to cross the boundaries (eliminating wick noise)
-            breakout_cond = (float(latest["Close"]) > or_high)
-            breakdown_cond = (float(latest["Close"]) < or_low)
+            breakout_cond = (ltp > or_high)
+            breakdown_cond = (ltp < or_low)
 
         rvol = today_opening_vol / avg_opening_volume if avg_opening_volume > 0 else 1.0
 
-        # VWAP Calculation for today
         today_df["TP"] = (today_df["High"] + today_df["Low"] + today_df["Close"]) / 3
         today_df["TPV"] = today_df["TP"] * today_df["Volume"]
         cum_tpv = today_df["TPV"].cumsum()
@@ -200,7 +223,7 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 4. TABBED LAYOUT STRUCTURE (3 TABS)
+# 5. TABBED LAYOUT STRUCTURE (3 TABS)
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
@@ -211,10 +234,10 @@ tab_15m, tab_5m, tab_swing = st.tabs([
 # --- TAB 1: CLEAN 15-MIN ORB ---
 with tab_15m:
     st.subheader("⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)")
-    st.caption("Low-noise institutional strategy. Uses a 15-minute opening range to filter out early morning whipsaws.")
+    st.caption("Low-noise institutional strategy utilizing a 15-minute opening window.")
 
     if st.button("🚀 Run 15-Min Scan", type="primary", key="btn_15m"):
-        buy_signals, sell_signals, neutral_list = [], [], []
+        buy_signals, sell_signals = [], []
         progress_bar = st.progress(0)
         status_msg = st.empty()
 
@@ -223,22 +246,17 @@ with tab_15m:
             progress_bar.progress((i + 1) / len(symbols_to_scan))
 
             data = analyze_orb_strategy(sym, timeframe="15m")
-            if not data or "error" in data:
-                continue
+            if not data or "error" in data: continue
 
             ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
             has_vol = rvol >= rvol_mult
 
             if data["Breakout"] and (ltp > vwap) and has_vol:
-                sl = or_l
-                risk = round(ltp - sl, 2)
-                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR High": or_h, "Stop-Loss": sl, "Target (1.5R)": round(ltp + (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
+                risk = round(ltp - or_l, 2)
+                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR High": or_h, "Stop-Loss": or_l, "Target (1.5R)": round(ltp + (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
             elif data["Breakdown"] and (ltp < vwap) and has_vol:
-                sl = or_h
-                risk = round(sl - ltp, 2)
-                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR Low": or_l, "Stop-Loss": sl, "Target (1.5R)": round(ltp - (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
-            else:
-                neutral_list.append({"Stock": data["Symbol"], "LTP": ltp, "RVOL": f"{rvol}x"})
+                risk = round(or_h - ltp, 2)
+                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR Low": or_l, "Stop-Loss": or_h, "Target (1.5R)": round(ltp - (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
 
         status_msg.success("15-Min Scan Completed.")
         progress_bar.empty()
@@ -254,10 +272,10 @@ with tab_15m:
 # --- TAB 2: FILTERED 5-MIN CANDLE-CLOSE + RVOL ORB ---
 with tab_5m:
     st.subheader("⚡ 5-Minute ORB with Strict Candle Close + RVOL")
-    st.caption("Fights 5-minute noise by requiring a full candle to close outside the range boundaries, backed by high relative volume.")
+    st.caption("Fights 5-minute noise by requiring candle-close confirmation outside the range.")
 
     if st.button("🚀 Run Filtered 5-Min Scan", type="primary", key="btn_5m"):
-        buy_signals, sell_signals, neutral_list = [], [], []
+        buy_signals, sell_signals = [], []
         progress_bar = st.progress(0)
         status_msg = st.empty()
 
@@ -266,22 +284,17 @@ with tab_5m:
             progress_bar.progress((i + 1) / len(symbols_to_scan))
 
             data = analyze_orb_strategy(sym, timeframe="5m")
-            if not data or "error" in data:
-                continue
+            if not data or "error" in data: continue
 
             ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
             has_vol = rvol >= rvol_mult
 
             if data["Breakout"] and (ltp > vwap) and has_vol:
-                sl = or_l
-                risk = round(ltp - sl, 2)
-                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR High": or_h, "Stop-Loss": sl, "Target (1.5R)": round(ltp + (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
+                risk = round(ltp - or_l, 2)
+                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR High": or_h, "Stop-Loss": or_l, "Target (1.5R)": round(ltp + (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
             elif data["Breakdown"] and (ltp < vwap) and has_vol:
-                sl = or_h
-                risk = round(sl - ltp, 2)
-                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR Low": or_l, "Stop-Loss": sl, "Target (1.5R)": round(ltp - (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
-            else:
-                neutral_list.append({"Stock": data["Symbol"], "LTP": ltp, "RVOL": f"{rvol}x"})
+                risk = round(or_h - ltp, 2)
+                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR Low": or_l, "Stop-Loss": or_h, "Target (1.5R)": round(ltp - (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
 
         status_msg.success("Filtered 5-Min Scan Completed.")
         progress_bar.empty()
@@ -297,7 +310,7 @@ with tab_5m:
 # --- TAB 3: QUANTITATIVE SWING DASHBOARD ---
 with tab_swing:
     st.subheader("📈 Quantitative Multi-Factor Swing Scanner")
-    st.caption("Evaluates 60-day volatility-adjusted momentum, 50-day statistical Z-scores, and 20-day institutional RVOL accumulation.")
+    st.caption("Evaluates momentum, Z-scores, and institutional volume accumulation.")
     
     if st.button("🚀 Run Quant Swing Scan", type="primary", key="btn_swing"):
         swing_candidates = []
