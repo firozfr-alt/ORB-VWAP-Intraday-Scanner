@@ -61,6 +61,31 @@ st.markdown("""
         letter-spacing: 0.2px;
     }
 
+    /* Tomorrow Market Summary Card Style */
+    .summary-card {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.5) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        padding: 20px 24px;
+        border-radius: 14px;
+        box-shadow: 0 4px 25px rgba(59, 130, 246, 0.2);
+        margin-bottom: 20px;
+    }
+
+    .summary-title {
+        color: #60a5fa !important;
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+
+    .summary-text {
+        color: #cbd5e1 !important;
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
     /* Strategy Highlight Boxes (Green Highlight with Golden Text Inside) */
     .strategy-box-1, .strategy-box-2, .strategy-box-3 {
         background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 47, 46, 0.95) 100%);
@@ -137,7 +162,6 @@ with col_status:
     </div>
     """, unsafe_allow_html=True)
 
-# Unbolded, Smaller Left-Aligned Subtitle
 st.markdown('<div class="subtitle-clean">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
@@ -178,10 +202,25 @@ for i, (name, val) in enumerate(indices_data.items()):
         </div>
         """, unsafe_allow_html=True)
 
+# ==========================================
+# 3. TOMORROW MARKET CONDITION SUMMARY & NOTES
+# ==========================================
+st.markdown("""
+<div class="summary-card">
+    <h3 class="summary-title">🔮 Tomorrow's Market Outlook & Strategy Notes</h3>
+    <p class="summary-text">
+        • <b>Global & Regional Tone:</b> Cautious stance across global equities with mixed reactions to energy volatility.<br>
+        • <b>Trend Alignment:</b> Nifty defending critical lower supports while Bank Nifty attempts range-bound stabilization.<br>
+        • <b>Execution Caution:</b> High susceptibility to early choppy movements; avoid jumping into immediate wicks.<br>
+        • <b>Discipline Rule:</b> Wait for confirmed candle closures and robust Relative Volume (RVOL) spikes before entry.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("---")
 
 # ==========================================
-# 3. WATCHLISTS & SIDEBAR CONTROLS
+# 4. WATCHLISTS & SIDEBAR CONTROLS
 # ==========================================
 WATCHLIST_PRESETS = {
     "Nifty 50 Core": [
@@ -227,7 +266,7 @@ st.sidebar.subheader("Swing Tuning")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
-# 4. TECHNICAL ENGINES (EXACT UNTOUCHED LOGIC)
+# 5. TECHNICAL ENGINES (EXACT UNTOUCHED LOGIC)
 # ==========================================
 def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
     try:
@@ -310,7 +349,7 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 5. TABBED DASHBOARD STRUCTURE (3 TABS)
+# 6. TABBED DASHBOARD STRUCTURE (3 TABS)
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
