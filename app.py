@@ -7,7 +7,7 @@ import pytz
 import ta
 
 # ==========================================
-# 1. PAGE CONFIGURATION & STYLING
+# 1. PAGE CONFIGURATION & CUSTOM CSS (PRO TRADING DARK UI)
 # ==========================================
 st.set_page_config(
     page_title="Institutional Trading Platform",
@@ -18,16 +18,71 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .stDataFrame { border-radius: 8px; overflow: hidden; }
+    /* Dark Theme Global Adjustments */
+    .stApp {
+        background-color: #0b0f19;
+        color: #f3f4f6;
+    }
+    
+    /* Modern Glassmorphism Card Style */
+    .pro-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        backdrop-filter: blur(4px);
+        margin-bottom: 15px;
+    }
+    
+    .pro-card h3 {
+        margin: 0 0 5px 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+    
+    .pro-card p {
+        margin: 0;
+        font-size: 13px;
+        color: #94a3b8;
+    }
+    
+    /* Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #1e293b;
+        border-radius: 8px;
+        color: #cbd5e1;
+        padding: 10px 16px;
+        font-weight: 500;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ Institutional Multi-Strategy Screener")
-st.caption("Advanced live market platform featuring Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing models.")
+# ==========================================
+# 2. HEADER TITLE & LIVE MARKET INDICES BANNER
+# ==========================================
+col_h1, col_h2 = st.columns([3, 1])
+with col_h1:
+    st.markdown("## ⚡ Institutional Multi-Strategy Platform")
+    st.caption("Real-Time Quantitative Scanner, Breakout Filters, and Multi-Factor Swing Models.")
+with col_h2:
+    st.markdown("""
+    <div style="text-align: right; padding-top: 5px;">
+        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">🟢 Market Live Active</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ==========================================
-# 2. LIVE MARKET INDICES BANNER (NIFTY & BANK NIFTY)
-# ==========================================
+st.markdown("---")
+
 @st.cache_data(ttl=60)
 def get_market_indices():
     indices = {"Nifty 50": "^NSEI", "Bank Nifty": "^NSEBANK"}
@@ -42,24 +97,26 @@ def get_market_indices():
                 change = current - prev
                 pct = (change / prev) * 100
                 trend = "Bullish 🟢" if change >= 0 else "Bearish 🔴"
-                data[name] = {"price": round(current, 2), "change": round(pct, 2), "trend": trend}
+                data[name] = {"price": round(current, 2), "change": round(pct, 2), "trend": trend, "pos": change >= 0}
             else:
-                data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral"}
+                data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral", "pos": True}
         except Exception:
-            data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral"}
+            data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral", "pos": True}
     return data
 
 indices_data = get_market_indices()
 
-# Render Index Cards at the Top
-idx_col1, idx_col2 = st.columns(2)
+idx_cols = st.columns(2)
 for i, (name, val) in enumerate(indices_data.items()):
-    with [idx_col1, idx_col2][i]:
-        st.metric(
-            label=f"{name} Live Index",
-            value=f"₹{val['price']:,}",
-            delta=f"{val['change']}% ({val['trend']})"
-        )
+    color_style = "color: #10b981;" if val["pos"] else "color: #ef4444;"
+    with idx_cols[i]:
+        st.markdown(f"""
+        <div class="pro-card">
+            <p>{name} Live Benchmark Index</p>
+            <h3>₹{val['price']:,}</h3>
+            <span style="font-size: 13px; font-weight: 600; {color_style}">Change: {val['change']}% | Trend: {val['trend']}</span>
+        </div>
+        """, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -84,7 +141,7 @@ WATCHLIST_PRESETS = {
     ]
 }
 
-st.sidebar.header("🎯 Master Settings")
+st.sidebar.header("🎯 Master Configuration")
 selected_preset = st.sidebar.selectbox("Choose Universe", list(WATCHLIST_PRESETS.keys()) + ["Custom Symbols"])
 
 if selected_preset == "Custom Symbols":
@@ -98,7 +155,7 @@ else:
     symbols_to_scan = WATCHLIST_PRESETS[selected_preset]
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Intraday Filters")
+st.sidebar.subheader("Intraday Tuning")
 rvol_mult = st.sidebar.slider("Min Intraday RVOL", 1.0, 5.0, 1.5, 0.1)
 auto_refresh = st.sidebar.checkbox("Enable Auto-Refresh (every 60s)", value=False)
 if auto_refresh:
@@ -106,7 +163,7 @@ if auto_refresh:
     st.fragment(run_every=60)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Swing Filters")
+st.sidebar.subheader("Swing Tuning")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
@@ -193,7 +250,7 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 5. TABBED LAYOUT STRUCTURE (3 TABS)
+# 5. TABBED DASHBOARD STRUCTURE (3 TABS)
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
@@ -202,7 +259,8 @@ tab_15m, tab_5m, tab_swing = st.tabs([
 ])
 
 with tab_15m:
-    st.subheader("⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)")
+    st.markdown("### 15-Minute Opening Range Breakout (9:15–9:30 AM)")
+    st.caption("Low-noise institutional strategy utilizing a 15-minute opening window.")
     if st.button("🚀 Run 15-Min Scan", type="primary", key="btn_15m"):
         buy_signals, sell_signals = [], []
         bar = st.progress(0)
@@ -219,11 +277,16 @@ with tab_15m:
                 sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
         bar.empty()
         c1, c2 = st.columns(2)
-        with c1: st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Clean Breakouts"}]), use_container_width=True)
-        with c2: st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Clean Breakdowns"}]), use_container_width=True)
+        with c1: 
+            st.markdown("#### 🟢 Long Setups")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Clean Breakouts"}]), use_container_width=True)
+        with c2: 
+            st.markdown("#### 🔴 Short Setups")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Clean Breakdowns"}]), use_container_width=True)
 
 with tab_5m:
-    st.subheader("⚡ 5-Minute ORB with Strict Candle Close + RVOL")
+    st.markdown("### 5-Minute ORB with Strict Candle Close + RVOL")
+    st.caption("Fights 5-minute noise by requiring candle-close confirmation outside the range.")
     if st.button("🚀 Run Filtered 5-Min Scan", type="primary", key="btn_5m"):
         buy_signals, sell_signals = [], []
         bar = st.progress(0)
@@ -240,11 +303,16 @@ with tab_5m:
                 sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
         bar.empty()
         c1, c2 = st.columns(2)
-        with c1: st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Confirmed Breakouts"}]), use_container_width=True)
-        with c2: st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Confirmed Breakdowns"}]), use_container_width=True)
+        with c1: 
+            st.markdown("#### 🟢 Long Setups")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Confirmed Breakouts"}]), use_container_width=True)
+        with c2: 
+            st.markdown("#### 🔴 Short Setups")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Confirmed Breakdowns"}]), use_container_width=True)
 
 with tab_swing:
-    st.subheader("📈 Quantitative Multi-Factor Swing Scanner")
+    st.markdown("### Quantitative Multi-Factor Swing Scanner")
+    st.caption("Evaluates momentum, Z-scores, and institutional volume accumulation.")
     if st.button("🚀 Run Quant Swing Scan", type="primary", key="btn_swing"):
         swing_candidates = []
         bar = st.progress(0)
