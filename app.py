@@ -7,10 +7,10 @@ import pytz
 import ta
 
 # ==========================================
-# 1. PAGE CONFIGURATION & CUSTOM CSS STYLING
+# 1. PAGE CONFIGURATION & CUSTOM CSS (JIADE UI THEME)
 # ==========================================
 st.set_page_config(
-    page_title="Institutional Trading Platform",
+    page_title="Jiade - Institutional Trading Dashboard",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -18,13 +18,33 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .stDataFrame { border-radius: 8px; overflow: hidden; }
-    .css-1r6slb0 { background-color: #0e1117; }
+    /* Global Theme Adjustments */
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    
+    /* Card Styling to match Jiade UI */
+    .jiade-card {
+        background: linear-gradient(135deg, #1b2238 0%, #111827 100%);
+        border: 1px solid #2d3748;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    .metric-card-1 { background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); }
+    .metric-card-2 { background: linear-gradient(135deg, #d69e2e 0%, #b7791f 100%); }
+    .metric-card-3 { background: linear-gradient(135deg, #805ad5 0%, #553c9a 100%); }
+    .metric-card-4 { background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%); }
+
+    /* Custom Header Styling */
+    h1, h2, h3 {
+        color: #ffffff !important;
+    }
 </style>
 """, unsafe_allow_html=True)
-
-st.title("⚡ Institutional Multi-Strategy Screener")
-st.caption("Advanced live market platform featuring Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing models.")
 
 # ==========================================
 # 2. LIVE MARKET INDICES BANNER (NIFTY & BANK NIFTY)
@@ -52,20 +72,38 @@ def get_market_indices():
 
 indices_data = get_market_indices()
 
-# Render Index Cards at the Top
-idx_col1, idx_col2 = st.columns(2)
-for i, (name, val) in enumerate(indices_data.items()):
-    with [idx_col1, idx_col2][i]:
-        st.metric(
-            label=f"{name} Live Index",
-            value=f"₹{val['price']:,}",
-            delta=f"{val['change']}% ({val['trend']})"
-        )
+# Top Dashboard Header Structure like Jiade
+col_title, col_search, col_user = st.columns([2, 3, 2])
+with col_title:
+    st.markdown("### 💎 Jiade Dashboard")
+with col_search:
+    search_query = st.text_input("", placeholder="Search Dashboard...", label_visibility="collapsed")
+with col_user:
+    st.markdown("👤 **James Supardi**  \n<small>@jammsupardi</small>", unsafe_allow_html=True)
 
 st.markdown("---")
 
+# Render 4 Top Stat Cards matching the UI reference
+stat_cols = st.columns(4)
+metrics_preview = [
+    ("📊 Nifty Index", f"₹{indices_data['Nifty 50']['price']:,}", indices_data['Nifty 50']['trend'], "metric-card-1"),
+    ("⚡ Bank Nifty", f"₹{indices_data['Bank Nifty']['price']:,}", indices_data['Bank Nifty']['trend'], "metric-card-2"),
+    ("📈 Active Equities", "2,450", "+4% (30 days)", "metric-card-3"),
+    ("🔥 Market Sentiment", "Bullish", "+4% (31 days)", "metric-card-4")
+]
+
+for i, (label, val, delta, css_class) in enumerate(metrics_preview):
+    with stat_cols[i]:
+        st.markdown(f"""
+        <div class="jiade-card {css_class}">
+            <p style="font-size: 12px; margin: 0; opacity: 0.8;">{delta}</p>
+            <h2 style="margin: 5px 0; font-size: 24px;">{val}</h2>
+            <p style="font-size: 14px; margin: 0;">{label}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
 # ==========================================
-# 3. WATCHLISTS & SIDEBAR CONTROLS
+# 3. WATCHLISTS & SIDEBAR NAVIGATION (JIADE SIDEBAR)
 # ==========================================
 WATCHLIST_PRESETS = {
     "Nifty 50 Core": [
@@ -85,7 +123,10 @@ WATCHLIST_PRESETS = {
     ]
 }
 
-st.sidebar.header("🎯 Master Settings")
+st.sidebar.header("📁 Jiade Navigation")
+wallet_bal = st.sidebar.metric("Balance", "$2353.25", "Withdraw Money")
+st.sidebar.markdown("---")
+
 selected_preset = st.sidebar.selectbox("Choose Universe", list(WATCHLIST_PRESETS.keys()) + ["Custom Symbols"])
 
 if selected_preset == "Custom Symbols":
@@ -194,7 +235,7 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 5. TABBED LAYOUT STRUCTURE (3 TABS)
+# 5. TABBED LAYOUT STRUCTURE (3 TABS) MATCHING JIADE DESIGN
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
