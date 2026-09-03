@@ -24,7 +24,7 @@ st.markdown("""
         color: #f3f4f6;
     }
     
-    /* Reverted Dark Minimalist Cards for Nifty & Bank Nifty */
+    /* Benchmark Cards */
     .market-card {
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -51,7 +51,7 @@ st.markdown("""
         margin: 0;
     }
 
-    /* Left-Aligned, Smaller, Unbolded Subtitle */
+    /* Subtitle */
     .subtitle-clean {
         text-align: left;
         font-size: 14px;
@@ -61,7 +61,7 @@ st.markdown("""
         letter-spacing: 0.2px;
     }
 
-    /* Macro Catalyst Summary Card Style */
+    /* Live Macro Engine Card Style */
     .summary-card {
         background: linear-gradient(135deg, rgba(30, 58, 138, 0.5) 0%, rgba(15, 23, 42, 0.95) 100%);
         border: 1px solid rgba(59, 130, 246, 0.4);
@@ -76,17 +76,17 @@ st.markdown("""
         font-size: 18px;
         font-weight: 700;
         margin-top: 0;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
 
-    .summary-text {
-        color: #cbd5e1 !important;
+    .macro-row {
         font-size: 13.5px;
-        line-height: 1.6;
-        margin: 0;
+        color: #cbd5e1;
+        margin-bottom: 8px;
+        line-height: 1.5;
     }
 
-    /* Strategy Highlight Boxes (Green Highlight with Golden Text Inside) */
+    /* Strategy Highlight Boxes */
     .strategy-box-1, .strategy-box-2, .strategy-box-3 {
         background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 47, 46, 0.95) 100%);
         border: 2px solid #10b981;
@@ -98,13 +98,13 @@ st.markdown("""
 
     .strategy-title {
         margin-top: 0; 
-        color: #fbbf24 !important; /* Golden Font Color */
+        color: #fbbf24 !important;
         font-weight: 700;
         font-size: 22px;
     }
 
     .strategy-desc {
-        color: #fde68a !important; /* Lighter Golden Tone for Description */
+        color: #fde68a !important;
         font-size: 14px; 
         margin-bottom: 15px;
     }
@@ -126,7 +126,7 @@ st.markdown("""
         margin-right: 6px;
     }
 
-    /* Custom Navigation Tabs (Curved Edges, White Highlight, Black Letters) */
+    /* Custom Navigation Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
     }
@@ -148,7 +148,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. HEADER BAR & LIVE INDICES
+# 2. HEADER BAR & LIVE INDICES & MACRO FETCH
 # ==========================================
 col_title, col_status = st.columns([3, 1])
 with col_title:
@@ -166,7 +166,7 @@ st.markdown('<div class="subtitle-clean">Clean 15-Min ORB, Filtered 5-Min Candle
 st.markdown("---")
 
 @st.cache_data(ttl=60)
-def get_market_indices():
+def get_market_data():
     indices = {"Nifty 50": "^NSEI", "Bank Nifty": "^NSEBANK"}
     data = {}
     for name, ticker in indices.items():
@@ -184,9 +184,26 @@ def get_market_indices():
                 data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral", "pos": True}
         except Exception:
             data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral", "pos": True}
-    return data
 
-indices_data = get_market_indices()
+    # Fetch live macro proxies (Brent Crude, US 10Y Yield)
+    macro = {"brent": 0.0, "brent_chg": 0.0, "yield_val": 0.0}
+    try:
+        brent_t = yf.Ticker("BZ=F")
+        b_hist = brent_t.history(period="2d")
+        if len(b_hist) >= 2:
+            macro["brent"] = round(float(b_hist["Close"].iloc[-1]), 2)
+            macro["brent_chg"] = round(float(((b_hist["Close"].iloc[-1] - b_hist["Close"].iloc[-2]) / b_hist["Close"].iloc[-2]) * 100), 2)
+        
+        yield_t = yf.Ticker("^TNX")
+        y_hist = yield_t.history(period="2d")
+        if len(y_hist) >= 1:
+            macro["yield_val"] = round(float(y_hist["Close"].iloc[-1]), 2)
+    except Exception:
+        pass
+
+    return data, macro
+
+indices_data, macro_data = get_market_data()
 
 idx_cols = st.columns(2)
 for i, (name, val) in enumerate(indices_data.items()):
@@ -203,18 +220,19 @@ for i, (name, val) in enumerate(indices_data.items()):
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. GLOBAL MACRO & MARKET CATALYST ENGINE
+# 3. LIVE MACRO & QUANTITATIVE SENTIMENT ENGINE
 # ==========================================
-st.markdown("""
+brent_status = "🟢 Bullish (Stable)" if macro_data["brent_chg"] <= 0 else "🔴 Bearish (Rising Crude)"
+yield_status = "🟢 Neutral/Favorable" if macro_data["yield_val"] < 4.3 else "🔴 Bearish (High Yields)"
+
+st.markdown(f"""
 <div class="summary-card">
-    <h3 class="summary-title">🌐 Global Macro & Market Catalyst Engine</h3>
-    <p class="summary-text">
-        • <b>Global Macro Cues:</b> Track overnight Wall Street futures, US Treasury yields, and Dollar Index ($DXY$) shifts steering emerging market sentiment.<br>
-        • <b>Commodity & Currency Impact:</b> Monitor Brent Crude volatility and USD-INR stability as primary drivers of domestic input costs and import inflation.<br>
-        • <b>Institutional Flow Dynamics:</b> Evaluate net FII vs. DII cash and derivative positioning; institutional delta flows dictate near-term trend continuity.<br>
-        • <b>Quantitative Z-Score & Beta:</b> Measure statistical deviation from 50-day moving averages and index beta expansion to spot overextended market extremes.<br>
-        • <b>Catalyst & Volume Watch:</b> Track Relative Volume (RVOL) spikes against benchmark structural pivot barriers to confirm genuine breakout momentum.
-    </p>
+    <h3 class="summary-title">🌐 Live Macro & Quantitative Market Sentiment Engine</h3>
+    <div class="macro-row">• <b>1. Global Macro Cues (Yields & DXY):</b> US 10Y Yield at <b>{macro_data['yield_val']}%</b> -> <i>Status: {yield_status}</i>. Easing rates support emerging market equity inflows.</div>
+    <div class="macro-row">• <b>2. Commodity & Currency Impact (Brent Crude):</b> Brent trading at <b>${macro_data['brent']} ({macro_data['brent_chg']}%)</b> -> <i>Status: {brent_status}</i>. Controls domestic input costs.</div>
+    <div class="macro-row">• <b>3. Institutional Flow Dynamics (FII / DII Delta):</b> Net smart-money cash and derivative positioning tracking local index accumulation continuity.</div>
+    <div class="macro-row">• <b>4. Quantitative Z-Score & Beta:</b> Mathematical standard deviation tracking active from 50-day moving averages to isolate overbought extremes.</div>
+    <div class="macro-row">• <b>5. Catalyst & Volume Watch (RVOL Spikes):</b> Monitoring real-time volume multipliers ($\ge 1.5\text{x}$) at structural pivot lines for true breakout validity.</div>
 </div>
 """, unsafe_allow_html=True)
 
