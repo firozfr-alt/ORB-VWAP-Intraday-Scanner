@@ -24,57 +24,63 @@ st.markdown("""
         color: #f3f4f6;
     }
     
-    /* Clean Minimalist Cards */
+    /* White Minimalist Cards for Nifty & Bank Nifty */
     .market-card {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         margin-bottom: 10px;
+        color: #0f172a;
     }
     
     .card-label {
         font-size: 12px;
-        color: #94a3b8;
+        color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin-bottom: 4px;
+        font-weight: 600;
     }
     
     .card-value {
         font-size: 24px;
         font-weight: 700;
-        color: #ffffff;
+        color: #0f172a;
         margin: 0;
     }
 
-    /* Distinct Strategy Box Styling */
-    .strategy-box-1 {
-        background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(59, 130, 246, 0.3);
+    /* Centered & Bold Subtitle Styling */
+    .subtitle-center {
+        text-align: center;
+        font-size: 16px;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin-bottom: 25px;
+    }
+
+    /* Strategy Highlight Boxes (Green Highlight with Golden Text Inside) */
+    .strategy-box-1, .strategy-box-2, .strategy-box-3 {
+        background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 47, 46, 0.95) 100%);
+        border: 2px solid #10b981;
         padding: 24px;
         border-radius: 14px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 25px rgba(16, 185, 129, 0.25);
         margin-bottom: 20px;
     }
 
-    .strategy-box-2 {
-        background: linear-gradient(135deg, rgba(6, 95, 70, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        padding: 24px;
-        border-radius: 14px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        margin-bottom: 20px;
+    .strategy-title {
+        margin-top: 0; 
+        color: #fbbf24 !important; /* Golden Font Color */
+        font-weight: 700;
+        font-size: 22px;
     }
 
-    .strategy-box-3 {
-        background: linear-gradient(135deg, rgba(109, 40, 217, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        padding: 24px;
-        border-radius: 14px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        margin-bottom: 20px;
+    .strategy-desc {
+        color: #fde68a !important; /* Lighter Golden Tone for Description */
+        font-size: 14px; 
+        margin-bottom: 15px;
     }
 
     /* Pulse Live Indicator */
@@ -120,7 +126,6 @@ st.markdown("""
 col_title, col_status = st.columns([3, 1])
 with col_title:
     st.markdown("## ⚡ Institutional Multi-Strategy Platform")
-    st.caption("Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.")
 with col_status:
     st.markdown("""
     <div style="text-align: right; padding-top: 10px;">
@@ -130,6 +135,8 @@ with col_status:
     </div>
     """, unsafe_allow_html=True)
 
+# Centered, Bold, Increased Font Subtitle
+st.markdown('<div class="subtitle-center">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 @st.cache_data(ttl=60)
@@ -301,7 +308,7 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 5. TABBED DASHBOARD STRUCTURE (3 TABS WITH COLORED STRATEGY BOXES)
+# 5. TABBED DASHBOARD STRUCTURE (3 TABS)
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
@@ -312,8 +319,8 @@ tab_15m, tab_5m, tab_swing = st.tabs([
 with tab_15m:
     st.markdown("""
     <div class="strategy-box-1">
-        <h3 style="margin-top:0; color: #60a5fa;">⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)</h3>
-        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Low-noise institutional strategy utilizing a 15-minute opening window.</p>
+        <h3 class="strategy-title">⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)</h3>
+        <p class="strategy-desc">Low-noise institutional strategy utilizing a 15-minute opening window.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -343,8 +350,8 @@ with tab_15m:
 with tab_5m:
     st.markdown("""
     <div class="strategy-box-2">
-        <h3 style="margin-top:0; color: #34d399;">⚡ 5-Minute ORB with Strict Candle Close + RVOL</h3>
-        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Fights 5-minute noise by requiring candle-close confirmation outside the range.</p>
+        <h3 class="strategy-title">⚡ 5-Minute ORB with Strict Candle Close + RVOL</h3>
+        <p class="strategy-desc">Fights 5-minute noise by requiring candle-close confirmation outside the range.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -374,8 +381,8 @@ with tab_5m:
 with tab_swing:
     st.markdown("""
     <div class="strategy-box-3">
-        <h3 style="margin-top:0; color: #a78bfa;">📈 Quantitative Multi-Factor Swing Scanner</h3>
-        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Evaluates momentum, Z-scores, and institutional volume accumulation.</p>
+        <h3 class="strategy-title">📈 Quantitative Multi-Factor Swing Scanner</h3>
+        <p class="strategy-desc">Evaluates momentum, Z-scores, and institutional volume accumulation.</p>
     </div>
     """, unsafe_allow_html=True)
 
