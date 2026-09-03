@@ -193,4 +193,61 @@ def analyze_swing_quant(ticker_symbol: str):
 # 6. DASHBOARD TABS
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
-    "⚡ Intraday 15-Min ORB",
+    "⚡ Intraday 15-Min ORB", 
+    "⚡ Intraday 5-Min Filtered", 
+    "📈 Quant Multi-Factor Swing"
+])
+
+with tab_15m:
+    st.markdown("### 15-Minute Institutional Opening Range Breakout")
+    if st.button("🚀 Run 15-Min Scan", type="primary", key="b15"):
+        buy_signals, sell_signals = [], []
+        for sym in symbols_to_scan:
+            data = analyze_orb_strategy(sym, "15m")
+            if not data: continue
+            if data["Breakout"] and (data["LTP"] > data["VWAP"]) and (data["RVOL"] >= rvol_mult):
+                risk = round(data["LTP"] - data["OR_Low"], 2)
+                buy_signals.append({"Stock": data["Symbol"], "LTP": data["LTP"], "Stop-Loss": data["OR_Low"], "Target": round(data["LTP"] + (1.5*risk), 2), "RVOL": f"{data['RVOL']}x"})
+            elif data["Breakdown"] and (data["LTP"] < data["VWAP"]) and (data["RVOL"] >= rvol_mult):
+                risk = round(data["OR_High"] - data["LTP"], 2)
+                sell_signals.append({"Stock": data["Symbol"], "LTP": data["LTP"], "Stop-Loss": data["OR_High"], "Target": round(data["LTP"] - (1.5*risk), 2), "RVOL": f"{data['RVOL']}x"})
+        
+        c1, c2 = st.columns(2)
+        with c1: st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Longs"}]), use_container_width=True)
+        with c2: st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Shorts"}]), use_container_width=True)
+
+with tab_5m:
+    st.markdown("### 5-Minute Candle-Close Confirmed ORB")
+    if st.button("🚀 Run 5-Min Scan", type="primary", key="b5"):
+        buy_signals, sell_signals = [], []
+        for sym in symbols_to_scan:
+            data = analyze_orb_strategy(sym, "5m")
+            if not data: continue
+            if data["Breakout"] and (data["LTP"] > data["VWAP"]) and (data["RVOL"] >= rvol_mult):
+                risk = round(data["LTP"] - data["OR_Low"], 2)
+                buy_signals.append({"Stock": data["Symbol"], "LTP": data["LTP"], "Stop-Loss": data["OR_Low"], "Target": round(data["LTP"] + (1.5*risk), 2), "RVOL": f"{data['RVOL']}x"})
+            elif data["Breakdown"] and (data["LTP"] < data["VWAP"]) and (data["RVOL"] >= rvol_mult):
+                risk = round(data["OR_High"] - data["LTP"], 2)
+                sell_signals.append({"Stock": data["Symbol"], "LTP": data["LTP"], "Stop-Loss": data["OR_High"], "Target": round(data["LTP"] - (1.5*risk), 2), "RVOL": f"{data['RVOL']}x"})
+        
+        c1, c2 = st.columns(2)
+        with c1: st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Longs"}]), use_container_width=True)
+        with c2: st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Shorts"}]), use_container_width=True)
+
+with tab_swing:
+    st.markdown("### Quantitative Multi-Factor Swing Screener")
+    if st.button("🚀 Run Swing Scan", type="primary", key="bsw"):
+        swing_candidates = []
+        for sym in symbols_to_scan:
+            s_data = analyze_swing_quant(sym)
+            if s_data and s_data["Is_Setup"]:
+                ltp, atr = s_data["LTP"], s_data["ATR"]
+                swing_candidates.append({
+                    "Stock": s_data["Symbol"], "LTP": ltp, "Alpha": s_data["Alpha Score"], 
+                    "Z-Score": s_data["Z-Score"], "RVOL": f"{s_data['RVOL_20']}x", 
+                    "Stop-Loss": round(ltp - (2.0 * atr), 2), "Target": round(ltp + (3.0 * atr), 2)
+                })
+        if swing_candidates:
+            st.dataframe(pd.DataFrame(swing_candidates).sort_values(by="Alpha", ascending=False), use_container_width=True)
+        else:
+            st.write("No swing setups match current quantitative alpha criteria.")
