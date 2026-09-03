@@ -7,7 +7,7 @@ import pytz
 import ta
 
 # ==========================================
-# 1. PAGE CONFIGURATION & ANIMATED CSS THEME
+# 1. PAGE CONFIGURATION & MODERN STYLING
 # ==========================================
 st.set_page_config(
     page_title="Institutional Trading Platform",
@@ -18,99 +18,86 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Dark Theme & Smooth Fade-in Animations */
+    /* Dark Institutional Theme */
     .stApp {
         background-color: #0b0f19;
         color: #f3f4f6;
     }
     
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes pulseGlow {
-        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    /* Animated Glassmorphism Cards */
-    .pro-card {
+    /* Clean Minimalist Cards */
+    .market-card {
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 22px;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        backdrop-filter: blur(4px);
-        margin-bottom: 15px;
-        animation: fadeIn 0.6s ease-out forwards;
-        transition: transform 0.3s ease, border-color 0.3s ease;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        margin-bottom: 10px;
     }
     
-    .pro-card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(59, 130, 246, 0.4);
+    .card-label {
+        font-size: 12px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 4px;
     }
     
-    .pro-card h3 {
-        margin: 6px 0;
+    .card-value {
         font-size: 24px;
         font-weight: 700;
         color: #ffffff;
-    }
-    
-    .pro-card p {
         margin: 0;
-        font-size: 13px;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
+    /* Pulse Live Indicator */
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.15); opacity: 0.6; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
     .live-dot {
-        height: 10px;
-        width: 10px;
+        height: 8px;
+        width: 8px;
         background-color: #10b981;
         border-radius: 50%;
         display: inline-block;
-        animation: pulseGlow 2s infinite;
+        animation: pulse 2s infinite;
         margin-right: 6px;
     }
-    
-    /* Custom Styled Tabs */
+
+    /* Custom Navigation Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
     }
     .stTabs [data-baseweb="tab"] {
         background-color: #1e293b;
-        border-radius: 10px;
+        border-radius: 8px;
         color: #cbd5e1;
         padding: 10px 18px;
-        font-weight: 500;
+        font-weight: 600;
         border: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.3s ease;
     }
     .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
         color: white !important;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        border-color: #60a5fa !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. HEADER TITLE & LIVE INDICES BANNER
+# 2. HEADER BAR & LIVE INDICES
 # ==========================================
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
+col_title, col_status = st.columns([3, 1])
+with col_title:
     st.markdown("## ⚡ Institutional Multi-Strategy Platform")
-    st.caption("Real-Time Quantitative Scanner, Breakout Filters, and Multi-Factor Swing Models.")
-with col_h2:
+    st.caption("Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.")
+with col_status:
     st.markdown("""
     <div style="text-align: right; padding-top: 10px;">
         <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
-            <span class="live-dot"></span>System Live
+            <span class="live-dot"></span>Live Feed Active
         </span>
     </div>
     """, unsafe_allow_html=True)
@@ -145,10 +132,12 @@ for i, (name, val) in enumerate(indices_data.items()):
     color_style = "color: #10b981;" if val["pos"] else "color: #ef4444;"
     with idx_cols[i]:
         st.markdown(f"""
-        <div class="pro-card">
-            <p>{name} Benchmark Index</p>
-            <h3>₹{val['price']:,}</h3>
-            <span style="font-size: 13px; font-weight: 600; {color_style}">Change: {val['change']}% | Trend: {val['trend']}</span>
+        <div class="market-card">
+            <div class="card-label">{name} Benchmark Index</div>
+            <div class="card-value">₹{val['price']:,}</div>
+            <div style="margin-top: 6px; font-size: 13px; font-weight: 600; {color_style}">
+                Change: {val['change']}% &nbsp;|&nbsp; Trend: {val['trend']}
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -201,7 +190,7 @@ st.sidebar.subheader("Swing Tuning")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
-# 4. TECHNICAL ENGINES
+# 4. TECHNICAL ENGINES (EXACT UNTOUCHED LOGIC)
 # ==========================================
 def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
     try:
