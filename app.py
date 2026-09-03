@@ -51,13 +51,14 @@ st.markdown("""
         margin: 0;
     }
 
-    /* Centered & Bold Subtitle Styling */
-    .subtitle-center {
-        text-align: center;
-        font-size: 16px;
-        font-weight: 700;
-        color: #e2e8f0;
+    /* Left-Aligned Institutional Style Subtitle */
+    .subtitle-left {
+        text-align: left;
+        font-size: 18px;
+        font-weight: 600;
+        color: #94a3b8;
         margin-bottom: 25px;
+        letter-spacing: 0.3px;
     }
 
     /* Strategy Highlight Boxes (Green Highlight with Golden Text Inside) */
@@ -136,8 +137,8 @@ with col_status:
     </div>
     """, unsafe_allow_html=True)
 
-# Centered, Bold, Increased Font Subtitle
-st.markdown('<div class="subtitle-center">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
+# Left-Aligned Institutional Subtitle Style
+st.markdown('<div class="subtitle-left">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 @st.cache_data(ttl=60)
