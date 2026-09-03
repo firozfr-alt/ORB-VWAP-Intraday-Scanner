@@ -81,7 +81,7 @@ st.markdown("""
 
     .summary-text {
         color: #cbd5e1 !important;
-        font-size: 14px;
+        font-size: 13.5px;
         line-height: 1.6;
         margin: 0;
     }
@@ -203,16 +203,17 @@ for i, (name, val) in enumerate(indices_data.items()):
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. TOMORROW MARKET CONDITION SUMMARY & NOTES
+# 3. TOMORROW MARKET CONDITION & DYNAMIC EXECUTION MATRIX
 # ==========================================
 st.markdown("""
 <div class="summary-card">
-    <h3 class="summary-title">🔮 Tomorrow's Market Outlook & Strategy Notes</h3>
+    <h3 class="summary-title">🔮 Tomorrow's Market Outlook & Dynamic Execution Matrix</h3>
     <p class="summary-text">
-        • <b>Global & Regional Tone:</b> Cautious stance across global equities with mixed reactions to energy volatility.<br>
-        • <b>Trend Alignment:</b> Nifty defending critical lower supports while Bank Nifty attempts range-bound stabilization.<br>
-        • <b>Execution Caution:</b> High susceptibility to early choppy movements; avoid jumping into immediate wicks.<br>
-        • <b>Discipline Rule:</b> Wait for confirmed candle closures and robust Relative Volume (RVOL) spikes before entry.
+        • <b>Condition Analysis:</b> Assess global futures and opening gap bias; look for Nifty/Bank Nifty reaction near key structural supports.<br>
+        • <b>Long Trade Action:</b> Execute only if price breaks Opening Range High, holds above VWAP, and shows RVOL $\ge$ your threshold.<br>
+        • <b>Short Trade Action:</b> Execute only if price breaks Opening Range Low, stays below VWAP, with heavy volume distribution.<br>
+        • <b>Dynamic Adaptation:</b> In high chop/sideways conditions, stand aside; let strict candle-close confirmations dictate entry.<br>
+        • <b>Risk Management:</b> Keep predefined stop-losses at the opposite range extreme or ATR boundary; never chase erratic wicks.
     </p>
 </div>
 """, unsafe_allow_html=True)
