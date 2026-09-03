@@ -61,7 +61,7 @@ st.markdown("""
         letter-spacing: 0.2px;
     }
 
-    /* Tomorrow Market Summary Card Style */
+    /* Global Outlook & Summary Card Style */
     .summary-card {
         background: linear-gradient(135deg, rgba(30, 58, 138, 0.5) 0%, rgba(15, 23, 42, 0.95) 100%);
         border: 1px solid rgba(59, 130, 246, 0.4);
@@ -203,17 +203,17 @@ for i, (name, val) in enumerate(indices_data.items()):
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. TOMORROW MARKET CONDITION & DYNAMIC EXECUTION MATRIX
+# 3. GLOBAL INFLUENCES & NEXT-SESSION EXECUTION MATRIX
 # ==========================================
 st.markdown("""
 <div class="summary-card">
-    <h3 class="summary-title">🔮 Tomorrow's Market Outlook & Dynamic Execution Matrix</h3>
+    <h3 class="summary-title">🔮 Global Market Context & Next-Session Execution Matrix</h3>
     <p class="summary-text">
-        • <b>Condition Analysis:</b> Assess global futures and opening gap bias; look for Nifty/Bank Nifty reaction near key structural supports.<br>
-        • <b>Long Trade Action:</b> Execute only if price breaks Opening Range High, holds above VWAP, and shows RVOL $\ge$ your threshold.<br>
-        • <b>Short Trade Action:</b> Execute only if price breaks Opening Range Low, stays below VWAP, with heavy volume distribution.<br>
-        • <b>Dynamic Adaptation:</b> In high chop/sideways conditions, stand aside; let strict candle-close confirmations dictate entry.<br>
-        • <b>Risk Management:</b> Keep predefined stop-losses at the opposite range extreme or ATR boundary; never chase erratic wicks.
+        • <b>Global Markets:</b> Overnight Wall Street equities recovered partially after initial tech/energy volatility, with easing bond yields.<br>
+        • <b>Indian Market Reaction:</b> Domestic indices are tracking global stabilization cues, expected to open cautiously near key support structures.<br>
+        • <b>Market Trend & Behavior:</b> Consolidation mode with sector divergence; expect choppy early price action and intraday range-bound swings.<br>
+        • <b>Tactical Action Plan:</b> Take long setups only on confirmed Opening Range breakouts holding above VWAP with strong RVOL volume spikes.<br>
+        • <b>Risk & Discipline:</b> Avoid chasing erratic wicks; enforce strict stop-losses at the opposite range extreme or ATR boundary.
     </p>
 </div>
 """, unsafe_allow_html=True)
