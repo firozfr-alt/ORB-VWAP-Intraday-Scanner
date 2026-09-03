@@ -51,14 +51,14 @@ st.markdown("""
         margin: 0;
     }
 
-    /* Clean Left-Aligned Subtitle matching Platform Title size */
+    /* Left-Aligned, Smaller, Unbolded Subtitle */
     .subtitle-clean {
         text-align: left;
-        font-size: 20px;
-        font-weight: 600;
+        font-size: 14px;
+        font-weight: 400;
         color: #94a3b8;
         margin-bottom: 20px;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
     }
 
     /* Strategy Highlight Boxes (Green Highlight with Golden Text Inside) */
@@ -137,7 +137,7 @@ with col_status:
     </div>
     """, unsafe_allow_html=True)
 
-# Clean, Left-Aligned Subtitle matching platform tone
+# Unbolded, Smaller Left-Aligned Subtitle
 st.markdown('<div class="subtitle-clean">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
