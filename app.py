@@ -185,7 +185,6 @@ def get_market_data():
         except Exception:
             data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral", "pos": True}
 
-    # Fetch live macro proxies (Brent Crude, US 10Y Yield)
     macro = {"brent": 0.0, "brent_chg": 0.0, "yield_val": 0.0}
     try:
         brent_t = yf.Ticker("BZ=F")
@@ -232,7 +231,7 @@ st.markdown(f"""
     <div class="macro-row">• <b>2. Commodity & Currency Impact (Brent Crude):</b> Brent trading at <b>${macro_data['brent']} ({macro_data['brent_chg']}%)</b> -> <i>Status: {brent_status}</i>. Controls domestic input costs.</div>
     <div class="macro-row">• <b>3. Institutional Flow Dynamics (FII / DII Delta):</b> Net smart-money cash and derivative positioning tracking local index accumulation continuity.</div>
     <div class="macro-row">• <b>4. Quantitative Z-Score & Beta:</b> Mathematical standard deviation tracking active from 50-day moving averages to isolate overbought extremes.</div>
-    <div class="macro-row">• <b>5. Catalyst & Volume Watch (RVOL Spikes):</b> Monitoring real-time volume multipliers ($\ge 1.5\text{x}$) at structural pivot lines for true breakout validity.</div>
+    <div class="macro-row">• <b>5. Catalyst & Volume Watch (RVOL Spikes):</b> Monitoring real-time volume multipliers (&ge; 1.5x) at structural pivot lines for true breakout validity.</div>
 </div>
 """, unsafe_allow_html=True)
 
