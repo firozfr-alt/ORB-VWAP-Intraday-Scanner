@@ -51,13 +51,13 @@ st.markdown("""
         margin: 0;
     }
 
-    /* Left-Aligned Institutional Style Subtitle */
-    .subtitle-left {
+    /* Clean Left-Aligned Subtitle matching Platform Title size */
+    .subtitle-clean {
         text-align: left;
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 600;
         color: #94a3b8;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         letter-spacing: 0.3px;
     }
 
@@ -137,8 +137,8 @@ with col_status:
     </div>
     """, unsafe_allow_html=True)
 
-# Left-Aligned Institutional Subtitle Style
-st.markdown('<div class="subtitle-left">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
+# Clean, Left-Aligned Subtitle matching platform tone
+st.markdown('<div class="subtitle-clean">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 @st.cache_data(ttl=60)
