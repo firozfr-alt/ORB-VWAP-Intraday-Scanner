@@ -24,20 +24,20 @@ st.markdown("""
         color: #f3f4f6;
     }
     
-    /* White Minimalist Cards for Nifty & Bank Nifty */
+    /* Reverted Dark Minimalist Cards for Nifty & Bank Nifty */
     .market-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         margin-bottom: 10px;
-        color: #0f172a;
+        color: #f3f4f6;
     }
     
     .card-label {
         font-size: 12px;
-        color: #64748b;
+        color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin-bottom: 4px;
@@ -47,7 +47,7 @@ st.markdown("""
     .card-value {
         font-size: 24px;
         font-weight: 700;
-        color: #0f172a;
+        color: #ffffff;
         margin: 0;
     }
 
@@ -100,22 +100,23 @@ st.markdown("""
         margin-right: 6px;
     }
 
-    /* Custom Navigation Tabs */
+    /* Custom Navigation Tabs (Curved Edges, White Highlight, Black Letters) */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
     }
     .stTabs [data-baseweb="tab"] {
         background-color: #1e293b;
-        border-radius: 8px;
+        border-radius: 10px;
         color: #cbd5e1;
         padding: 10px 18px;
         font-weight: 600;
         border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-        color: white !important;
-        border-color: #60a5fa !important;
+        background: white !important;
+        color: black !important;
+        border-radius: 10px !important;
+        border-color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
