@@ -10,7 +10,7 @@ import ta
 # 1. PAGE CONFIGURATION & STYLING
 # ==========================================
 st.set_page_config(
-    page_title="Pro Trading Screener (Intraday & Swing)",
+    page_title="Pro Trading Screener (Multi-Strategy)",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -23,7 +23,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("⚡ Pro Indian Equity Screener: Intraday & Swing")
-st.caption("Multi-strategy institutional scanner featuring 5-Min Intraday ORB/RVOL and Daily Quantitative Multi-Factor Swing setups.")
+st.caption("Multi-strategy institutional platform featuring Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing setups.")
 
 # ==========================================
 # 2. WATCHLISTS & SIDEBAR CONTROLS
@@ -61,26 +61,30 @@ else:
     symbols_to_scan = WATCHLIST_PRESETS[selected_preset]
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Intraday Tuning")
-rvol_mult = st.sidebar.slider("Min 5-Min RVOL", 1.0, 5.0, 1.5, 0.1)
+st.sidebar.subheader("Intraday Filters")
+rvol_mult = st.sidebar.slider("Min Intraday RVOL", 1.0, 5.0, 1.5, 0.1)
 auto_refresh = st.sidebar.checkbox("Enable Auto-Refresh (every 60s)", value=False)
 if auto_refresh:
     st.sidebar.info("Auto-refresh active.")
     st.fragment(run_every=60)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Swing Tuning")
+st.sidebar.subheader("Swing Filters")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
-# 3. TECHNICAL ENGINES
+# 3. ENGINES (INTRADAY 15M, 5M & SWING)
 # ==========================================
-def analyze_intraday(ticker_symbol: str):
+def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
+    """
+    timeframe: '15m' for 15-min clean ORB (9:15-9:30)
+              '5m' for 5-min candle-close confirmed ORB (9:15-9:20)
+    """
     try:
         stock = yf.Ticker(ticker_symbol)
-        df = stock.history(period="14d", interval="5m")
+        df = stock.history(period="14d", interval=timeframe)
 
-        if df.empty or len(df) < 50:
+        if df.empty or len(df) < 30:
             return None
 
         ist = pytz.timezone("Asia/Kolkata")
@@ -89,33 +93,58 @@ def analyze_intraday(ticker_symbol: str):
         else:
             df.index = df.index.tz_convert(ist)
 
+        # Historical Opening Volume Baseline
         first_candles = df.groupby(df.index.date).first()
         avg_opening_volume = first_candles['Volume'].iloc[:-1].mean()
 
         latest_date = df.index[-1].date()
         today_df = df[df.index.date == latest_date].copy()
 
-        if len(today_df) < 1:
-            return {"error": "Waiting for 9:20 AM candle completion."}
+        # Check required bars based on timeframe
+        min_bars_required = 2 if timeframe == '15m' else 2
+        if len(today_df) < min_bars_required:
+            return {"error": "Waiting for range completion."}
 
-        or_bar = today_df.iloc[0]
-        or_high = float(or_bar["High"])
-        or_low = float(or_bar["Low"])
-        today_opening_vol = float(or_bar["Volume"])
+        if timeframe == '15m':
+            # 15-min range: First candle covers 9:15-9:30
+            or_bar = today_df.iloc[0]
+            or_high = float(or_bar["High"])
+            or_low = float(or_bar["Low"])
+            today_opening_vol = float(or_bar["Volume"])
+            
+            # Latest completed bar for check
+            latest = today_df.iloc[-1]
+            ltp = float(latest["Close"])
+            # For 15m, check if current/latest close breaks range
+            breakout_cond = (ltp > or_high)
+            breakdown_cond = (ltp < or_low)
+        else:
+            # 5-min range: First bar is 9:15-9:20
+            or_bar = today_df.iloc[0]
+            or_high = float(or_bar["High"])
+            or_low = float(or_bar["Low"])
+            today_opening_vol = float(or_bar["Volume"])
+
+            # Strict Candle Close Confirmation: Inspect second bar onwards
+            sub_candles = today_df.iloc[1:]
+            if sub_candles.empty:
+                return {"error": "Waiting for breakout candle close."}
+            
+            latest = sub_candles.iloc[-1]
+            ltp = float(latest["Close"])
+            # Require the 5-min candle CLOSE to cross the boundaries (eliminating wick noise)
+            breakout_cond = (float(latest["Close"]) > or_high)
+            breakdown_cond = (float(latest["Close"]) < or_low)
 
         rvol = today_opening_vol / avg_opening_volume if avg_opening_volume > 0 else 1.0
 
+        # VWAP Calculation for today
         today_df["TP"] = (today_df["High"] + today_df["Low"] + today_df["Close"]) / 3
         today_df["TPV"] = today_df["TP"] * today_df["Volume"]
         cum_tpv = today_df["TPV"].cumsum()
         cum_vol = today_df["Volume"].cumsum()
         today_df["VWAP"] = cum_tpv / cum_vol.replace(0, np.nan)
-
-        latest_idx = today_df.index[-1]
-        vwap_latest = float(today_df.loc[latest_idx, "VWAP"])
-        latest = today_df.loc[latest_idx]
-
-        ltp = float(latest["Close"])
+        vwap_latest = float(today_df["VWAP"].iloc[-1])
 
         return {
             "Symbol": ticker_symbol.replace(".NS", ""),
@@ -123,7 +152,9 @@ def analyze_intraday(ticker_symbol: str):
             "OR_High": round(or_high, 2),
             "OR_Low": round(or_low, 2),
             "VWAP": round(vwap_latest, 2),
-            "RVOL": round(rvol, 2)
+            "RVOL": round(rvol, 2),
+            "Breakout": breakout_cond,
+            "Breakdown": breakdown_cond
         }
     except Exception:
         return None
@@ -169,24 +200,21 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 4. TABBED LAYOUT STRUCTURE
+# 4. TABBED LAYOUT STRUCTURE (3 TABS)
 # ==========================================
-tab_intraday, tab_swing = st.tabs(["⚡ Intraday 5-Min ORB + RVOL", "📈 Quant Multi-Factor Swing"])
+tab_15m, tab_5m, tab_swing = st.tabs([
+    "⚡ Intraday 15-Min ORB (Clean)", 
+    "⚡ Intraday 5-Min (Candle Close + RVOL)", 
+    "📈 Quant Multi-Factor Swing"
+])
 
-# --- TAB 1: ORIGINAL INTRADAY DASHBOARD ---
-with tab_intraday:
-    st.subheader("⚡ Intraday 5-Min ORB + VWAP + RVOL")
-    st.caption("Pure Price Action & Conviction: Scans for 5-Minute breakouts backed by massive Institutional Relative Volume (RVOL) and VWAP alignment.")
+# --- TAB 1: CLEAN 15-MIN ORB ---
+with tab_15m:
+    st.subheader("⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)")
+    st.caption("Low-noise institutional strategy. Uses a 15-minute opening range to filter out early morning whipsaws.")
 
-    scan_col1, _ = st.columns([1, 4])
-    with scan_col1:
-        trigger_scan = st.button("🚀 Run Live Intraday Scan", type="primary", use_container_width=True)
-
-    if trigger_scan or auto_refresh:
-        buy_signals = []
-        sell_signals = []
-        neutral_list = []
-
+    if st.button("🚀 Run 15-Min Scan", type="primary", key="btn_15m"):
+        buy_signals, sell_signals, neutral_list = [], [], []
         progress_bar = st.progress(0)
         status_msg = st.empty()
 
@@ -194,92 +222,84 @@ with tab_intraday:
             status_msg.text(f"Scanning {sym} ({i+1}/{len(symbols_to_scan)})...")
             progress_bar.progress((i + 1) / len(symbols_to_scan))
 
-            data = analyze_intraday(sym)
+            data = analyze_orb_strategy(sym, timeframe="15m")
             if not data or "error" in data:
                 continue
 
-            ltp = data["LTP"]
-            or_h = data["OR_High"]
-            or_l = data["OR_Low"]
-            vwap = data["VWAP"]
-            rvol = data["RVOL"]
-
+            ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
             has_vol = rvol >= rvol_mult
 
-            is_buy = (ltp > or_h) and (ltp > vwap) and has_vol
-            is_sell = (ltp < or_l) and (ltp < vwap) and has_vol
-
-            if is_buy:
+            if data["Breakout"] and (ltp > vwap) and has_vol:
                 sl = or_l
                 risk = round(ltp - sl, 2)
-                buy_signals.append({
-                    "Stock": data["Symbol"],
-                    "LTP (₹)": ltp,
-                    "OR High": or_h,
-                    "Stop-Loss (₹)": sl,
-                    "Target (1.5R)": round(ltp + (1.5 * risk), 2),
-                    "VWAP": vwap,
-                    "RVOL": f"{rvol}x"
-                })
-            elif is_sell:
+                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR High": or_h, "Stop-Loss": sl, "Target (1.5R)": round(ltp + (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
+            elif data["Breakdown"] and (ltp < vwap) and has_vol:
                 sl = or_h
                 risk = round(sl - ltp, 2)
-                sell_signals.append({
-                    "Stock": data["Symbol"],
-                    "LTP (₹)": ltp,
-                    "OR Low": or_l,
-                    "Stop-Loss (₹)": sl,
-                    "Target (1.5R)": round(ltp - (1.5 * risk), 2),
-                    "VWAP": vwap,
-                    "RVOL": f"{rvol}x"
-                })
+                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR Low": or_l, "Stop-Loss": sl, "Target (1.5R)": round(ltp - (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
             else:
-                neutral_list.append({
-                    "Stock": data["Symbol"],
-                    "LTP": ltp,
-                    "OR High": or_h,
-                    "OR Low": or_l,
-                    "VWAP": vwap,
-                    "RVOL": f"{rvol}x"
-                })
+                neutral_list.append({"Stock": data["Symbol"], "LTP": ltp, "RVOL": f"{rvol}x"})
 
-        status_msg.success(f"Scan finished at {datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%H:%M:%S')} IST")
+        status_msg.success("15-Min Scan Completed.")
         progress_bar.empty()
 
-        m1, m2, m3 = st.columns(3)
-        m1.metric("🟢 BUY Candidates", len(buy_signals))
-        m2.metric("🔴 SELL Candidates", len(sell_signals))
-        m3.metric("⚪ Neutral / In-Range", len(neutral_list))
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### 🟢 15M BUY Setups")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Clean Breakouts"}]), use_container_width=True)
+        with c2:
+            st.markdown("### 🔴 15M SELL Setups")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Clean Breakdowns"}]), use_container_width=True)
 
-        tab_b, tab_s, tab_a = st.tabs(["🟢 Long Breakouts (BUY)", "🔴 Short Breakdowns (SELL)", "📊 All Monitored Stocks"])
+# --- TAB 2: FILTERED 5-MIN CANDLE-CLOSE + RVOL ORB ---
+with tab_5m:
+    st.subheader("⚡ 5-Minute ORB with Strict Candle Close + RVOL")
+    st.caption("Fights 5-minute noise by requiring a full candle to close outside the range boundaries, backed by high relative volume.")
 
-        with tab_b:
-            if buy_signals:
-                df_buy = pd.DataFrame(buy_signals).sort_values(by="RVOL", ascending=False)
-                st.dataframe(df_buy, use_container_width=True)
-                st.info("💡 **Execution:** Enter on pullback to VWAP. Stop loss at OR Low. Trail VWAP after 1R. Hard square-off by 3:15 PM.")
+    if st.button("🚀 Run Filtered 5-Min Scan", type="primary", key="btn_5m"):
+        buy_signals, sell_signals, neutral_list = [], [], []
+        progress_bar = st.progress(0)
+        status_msg = st.empty()
+
+        for i, sym in enumerate(symbols_to_scan):
+            status_msg.text(f"Scanning {sym} ({i+1}/{len(symbols_to_scan)})...")
+            progress_bar.progress((i + 1) / len(symbols_to_scan))
+
+            data = analyze_orb_strategy(sym, timeframe="5m")
+            if not data or "error" in data:
+                continue
+
+            ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
+            has_vol = rvol >= rvol_mult
+
+            if data["Breakout"] and (ltp > vwap) and has_vol:
+                sl = or_l
+                risk = round(ltp - sl, 2)
+                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR High": or_h, "Stop-Loss": sl, "Target (1.5R)": round(ltp + (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
+            elif data["Breakdown"] and (ltp < vwap) and has_vol:
+                sl = or_h
+                risk = round(sl - ltp, 2)
+                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "OR Low": or_l, "Stop-Loss": sl, "Target (1.5R)": round(ltp - (1.5 * risk), 2), "VWAP": vwap, "RVOL": f"{rvol}x"})
             else:
-                st.write("No stocks currently satisfy bullish criteria.")
+                neutral_list.append({"Stock": data["Symbol"], "LTP": ltp, "RVOL": f"{rvol}x"})
 
-        with tab_s:
-            if sell_signals:
-                df_sell = pd.DataFrame(sell_signals).sort_values(by="RVOL", ascending=False)
-                st.dataframe(df_sell, use_container_width=True)
-                st.info("💡 **Execution:** Enter on pullback to VWAP. Stop loss at OR High. Trail VWAP after 1R. Hard square-off by 3:15 PM.")
-            else:
-                st.write("No stocks currently satisfy bearish criteria.")
+        status_msg.success("Filtered 5-Min Scan Completed.")
+        progress_bar.empty()
 
-        with tab_a:
-            if neutral_list:
-                df_neutral = pd.DataFrame(neutral_list).sort_values(by="RVOL", ascending=False)
-                st.dataframe(df_neutral, use_container_width=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### 🟢 Filtered 5M BUY Setups")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Confirmed Breakouts"}]), use_container_width=True)
+        with c2:
+            st.markdown("### 🔴 Filtered 5M SELL Setups")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Confirmed Breakdowns"}]), use_container_width=True)
 
-# --- TAB 2: NEW QUANTITATIVE SWING DASHBOARD ---
+# --- TAB 3: QUANTITATIVE SWING DASHBOARD ---
 with tab_swing:
     st.subheader("📈 Quantitative Multi-Factor Swing Scanner")
-    st.caption("Advanced quant model evaluating 60-day volatility-adjusted momentum, 50-day statistical Z-scores, and 20-day institutional RVOL accumulation.")
+    st.caption("Evaluates 60-day volatility-adjusted momentum, 50-day statistical Z-scores, and 20-day institutional RVOL accumulation.")
     
-    if st.button("🚀 Run Quant Swing Scan", type="primary"):
+    if st.button("🚀 Run Quant Swing Scan", type="primary", key="btn_swing"):
         swing_candidates = []
         bar_s = st.progress(0)
 
@@ -302,6 +322,6 @@ with tab_swing:
         if swing_candidates:
             df_swing = pd.DataFrame(swing_candidates).sort_values(by="Alpha Score", ascending=False)
             st.dataframe(df_swing, use_container_width=True)
-            st.info("💡 **Swing Execution Rule:** Hold positions for 3 to 15 days. Trail your stop-loss along the rising 20-day or 50-day moving average once the trade moves in your favor.")
+            st.info("💡 **Swing Execution Rule:** Hold positions for 3 to 15 days. Trail your stop-loss along the rising moving average once the trade moves in your favor.")
         else:
             st.write("No swing setups match current quantitative alpha criteria.")
