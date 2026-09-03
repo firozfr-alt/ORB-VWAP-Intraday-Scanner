@@ -49,6 +49,34 @@ st.markdown("""
         margin: 0;
     }
 
+    /* Distinct Strategy Box Styling */
+    .strategy-box-1 {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 24px;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        margin-bottom: 20px;
+    }
+
+    .strategy-box-2 {
+        background: linear-gradient(135deg, rgba(6, 95, 70, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 24px;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        margin-bottom: 20px;
+    }
+
+    .strategy-box-3 {
+        background: linear-gradient(135deg, rgba(109, 40, 217, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 24px;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        margin-bottom: 20px;
+    }
+
     /* Pulse Live Indicator */
     @keyframes pulse {
         0% { transform: scale(1); opacity: 1; }
@@ -273,7 +301,7 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 5. TABBED DASHBOARD STRUCTURE (3 TABS)
+# 5. TABBED DASHBOARD STRUCTURE (3 TABS WITH COLORED STRATEGY BOXES)
 # ==========================================
 tab_15m, tab_5m, tab_swing = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
@@ -282,8 +310,13 @@ tab_15m, tab_5m, tab_swing = st.tabs([
 ])
 
 with tab_15m:
-    st.markdown("### 15-Minute Opening Range Breakout (9:15–9:30 AM)")
-    st.caption("Low-noise institutional strategy utilizing a 15-minute opening window.")
+    st.markdown("""
+    <div class="strategy-box-1">
+        <h3 style="margin-top:0; color: #60a5fa;">⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)</h3>
+        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Low-noise institutional strategy utilizing a 15-minute opening window.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.button("🚀 Run 15-Min Scan", type="primary", key="btn_15m"):
         buy_signals, sell_signals = [], []
         bar = st.progress(0)
@@ -308,8 +341,13 @@ with tab_15m:
             st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Clean Breakdowns"}]), use_container_width=True)
 
 with tab_5m:
-    st.markdown("### 5-Minute ORB with Strict Candle Close + RVOL")
-    st.caption("Fights 5-minute noise by requiring candle-close confirmation outside the range.")
+    st.markdown("""
+    <div class="strategy-box-2">
+        <h3 style="margin-top:0; color: #34d399;">⚡ 5-Minute ORB with Strict Candle Close + RVOL</h3>
+        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Fights 5-minute noise by requiring candle-close confirmation outside the range.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.button("🚀 Run Filtered 5-Min Scan", type="primary", key="btn_5m"):
         buy_signals, sell_signals = [], []
         bar = st.progress(0)
@@ -334,8 +372,13 @@ with tab_5m:
             st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Confirmed Breakdowns"}]), use_container_width=True)
 
 with tab_swing:
-    st.markdown("### Quantitative Multi-Factor Swing Scanner")
-    st.caption("Evaluates momentum, Z-scores, and institutional volume accumulation.")
+    st.markdown("""
+    <div class="strategy-box-3">
+        <h3 style="margin-top:0; color: #a78bfa;">📈 Quantitative Multi-Factor Swing Scanner</h3>
+        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Evaluates momentum, Z-scores, and institutional volume accumulation.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.button("🚀 Run Quant Swing Scan", type="primary", key="btn_swing"):
         swing_candidates = []
         bar = st.progress(0)
