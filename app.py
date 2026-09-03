@@ -7,7 +7,7 @@ import pytz
 import ta
 
 # ==========================================
-# 1. PAGE CONFIGURATION & CUSTOM CSS (PRO TRADING DARK UI)
+# 1. PAGE CONFIGURATION & ANIMATED CSS THEME
 # ==========================================
 st.set_page_config(
     page_title="Institutional Trading Platform",
@@ -18,27 +18,45 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Dark Theme Global Adjustments */
+    /* Dark Theme & Smooth Fade-in Animations */
     .stApp {
         background-color: #0b0f19;
         color: #f3f4f6;
     }
     
-    /* Modern Glassmorphism Card Style */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Animated Glassmorphism Cards */
     .pro-card {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 20px;
-        border-radius: 14px;
+        padding: 22px;
+        border-radius: 16px;
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         backdrop-filter: blur(4px);
         margin-bottom: 15px;
+        animation: fadeIn 0.6s ease-out forwards;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .pro-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(59, 130, 246, 0.4);
     }
     
     .pro-card h3 {
-        margin: 0 0 5px 0;
-        font-size: 20px;
-        font-weight: 600;
+        margin: 6px 0;
+        font-size: 24px;
+        font-weight: 700;
         color: #ffffff;
     }
     
@@ -46,29 +64,43 @@ st.markdown("""
         margin: 0;
         font-size: 13px;
         color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .live-dot {
+        height: 10px;
+        width: 10px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulseGlow 2s infinite;
+        margin-right: 6px;
     }
     
-    /* Tab Styling */
+    /* Custom Styled Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 10px;
     }
     .stTabs [data-baseweb="tab"] {
         background-color: #1e293b;
-        border-radius: 8px;
+        border-radius: 10px;
         color: #cbd5e1;
-        padding: 10px 16px;
+        padding: 10px 18px;
         font-weight: 500;
         border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
     }
     .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
         color: white !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. HEADER TITLE & LIVE MARKET INDICES BANNER
+# 2. HEADER TITLE & LIVE INDICES BANNER
 # ==========================================
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
@@ -76,8 +108,10 @@ with col_h1:
     st.caption("Real-Time Quantitative Scanner, Breakout Filters, and Multi-Factor Swing Models.")
 with col_h2:
     st.markdown("""
-    <div style="text-align: right; padding-top: 5px;">
-        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">🟢 Market Live Active</span>
+    <div style="text-align: right; padding-top: 10px;">
+        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+            <span class="live-dot"></span>System Live
+        </span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -112,7 +146,7 @@ for i, (name, val) in enumerate(indices_data.items()):
     with idx_cols[i]:
         st.markdown(f"""
         <div class="pro-card">
-            <p>{name} Live Benchmark Index</p>
+            <p>{name} Benchmark Index</p>
             <h3>₹{val['price']:,}</h3>
             <span style="font-size: 13px; font-weight: 600; {color_style}">Change: {val['change']}% | Trend: {val['trend']}</span>
         </div>
