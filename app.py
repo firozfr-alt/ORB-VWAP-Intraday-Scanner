@@ -488,13 +488,12 @@ with tab_swing:
 with tab_best_sector:
     st.markdown("""
     <div class="strategy-box-4">
-        <h3 class="strategy-title">🚀 Best Performing Sector Intraday Outperformer Scanner</h3>
-        <p class="strategy-desc">Scans leading daily sectors and isolates constituent stocks showing relative strength and volume breakouts.</p>
+        <h3 class="strategy-title">🚀 Best & Worst Performing Sector Intraday Stock Picker</h3>
+        <p class="strategy-desc">Identifies top leading sectors for buying opportunities and worst lagging sectors for shorting opportunities.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Scan Leading Sector Outperformers", type="primary", key="btn_best_sector"):
-        # Live check for sector leaders using proxy indices
+    if st.button("🚀 Scan Sector Leaders & Laggards", type="primary", key="btn_best_sector"):
         sector_proxies = {
             "Nifty Bank": "^NSEBANK",
             "Nifty IT": "^CNXIT",
@@ -515,40 +514,61 @@ with tab_best_sector:
         
         if sec_perf:
             df_sec = pd.DataFrame(sec_perf).sort_values(by="Change (%)", ascending=False)
-            st.markdown("#### 🏆 Today's Sector Performance Ranking")
+            st.markdown("#### 📊 Sector Intraday Performance Ranking")
             st.dataframe(df_sec, use_container_width=True)
             
             top_sector = df_sec.iloc[0]["Sector"]
-            st.markdown(f"**Top Leading Sector Identified:** `{top_sector}` 🟢. Scanning constituent outperformers...")
+            worst_sector = df_sec.iloc[-1]["Sector"]
             
-            # Map top sector to stocks
-            sector_stock_map = {
-                "Nifty Bank": ["HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS", "SBIN.NS"],
-                "Nifty IT": ["TCS.NS", "INFY.NS", "HCLTECH.NS", "TECHM.NS", "WIPRO.NS"],
-                "Nifty Auto": ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS", "BAJAJ-AUTO.NS", "EICHERMOT.NS"],
-                "Nifty Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS", "APOLLOHOSP.NS"],
-                "Nifty Metal": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "ADANIENT.NS"]
-            }
+            col_buy, col_sell = st.columns(2)
             
-            stocks_to_check = sector_stock_map.get(top_sector, ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS"])
-            outperformers = []
-            for stck in stocks_to_check:
-                res = analyze_orb_strategy(stck, timeframe="15m")
-                if res and not "error" in res:
-                    outperformers.append({
-                        "Stock": res["Symbol"],
-                        "Sector": top_sector,
-                        "LTP (₹)": res["LTP"],
-                        "VWAP": res["VWAP"],
-                        "RVOL": f"{res['RVOL']}x",
-                        "Breakout Status": "Bullish Outperformer 🟢" if res["Breakout"] else "Consolidating 🟡"
-                    })
-            if outperformers:
-                st.dataframe(pd.DataFrame(outperformers), use_container_width=True)
-            else:
-                st.info("Gathering intraday tick confirmation for sector constituents...")
+            with col_buy:
+                st.markdown(f"#### 🟢 Buy Stocks from Best Sector: `{top_sector}`")
+                sector_buy_map = {
+                    "Nifty Bank": ["HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS"],
+                    "Nifty IT": ["TCS.NS", "INFY.NS", "HCLTECH.NS"],
+                    "Nifty Auto": ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS"],
+                    "Nifty Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS"],
+                    "Nifty Metal": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS"]
+                }
+                stocks_to_buy = sector_buy_map.get(top_sector, ["RELIANCE.NS", "HDFCBANK.NS"])
+                buy_results = []
+                for stck in stocks_to_buy:
+                    res = analyze_orb_strategy(stck, timeframe="15m")
+                    if res and not "error" in res:
+                        buy_results.append({
+                            "Stock": res["Symbol"],
+                            "LTP (₹)": res["LTP"],
+                            "VWAP": res["VWAP"],
+                            "RVOL": f"{res['RVOL']}x",
+                            "Action": "Buy Setup 🟢" if res["Breakout"] else "Accumulating 🟡"
+                        })
+                st.dataframe(pd.DataFrame(buy_results) if buy_results else pd.DataFrame([{"Status": "Evaluating breakouts..."}]), use_container_width=True)
+
+            with col_sell:
+                st.markdown(f"#### 🔴 Sell / Short Stocks from Worst Sector: `{worst_sector}`")
+                sector_sell_map = {
+                    "Nifty Bank": ["KOTAKBANK.NS", "SBIN.NS"],
+                    "Nifty IT": ["WIPRO.NS", "TECHM.NS"],
+                    "Nifty Auto": ["EICHERMOT.NS", "BAJAJ-AUTO.NS"],
+                    "Nifty Pharma": ["APOLLOHOSP.NS"],
+                    "Nifty Metal": ["TATASTEEL.NS", "VEDL.NS", "ADANIENT.NS"]
+                }
+                stocks_to_sell = sector_sell_map.get(worst_sector, ["TATASTEEL.NS", "VEDL.NS"])
+                sell_results = []
+                for stck in stocks_to_sell:
+                    res = analyze_orb_strategy(stck, timeframe="15m")
+                    if res and not "error" in res:
+                        sell_results.append({
+                            "Stock": res["Symbol"],
+                            "LTP (₹)": res["LTP"],
+                            "VWAP": res["VWAP"],
+                            "RVOL": f"{res['RVOL']}x",
+                            "Action": "Sell / Short 🔴" if res["Breakdown"] else "Distribution 🟡"
+                        })
+                st.dataframe(pd.DataFrame(sell_results) if sell_results else pd.DataFrame([{"Status": "Evaluating breakdowns..."}]), use_container_width=True)
         else:
-            st.warning("Unable to fetch live sector indices right now.")
+            st.warning("Unable to retrieve live sector performance data.")
 
 with tab_institutional:
     st.markdown("""
