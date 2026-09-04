@@ -260,7 +260,7 @@ st.markdown(f"""
     <div class="macro-row">• <b>1. Global Yields & DXY:</b> US 10Y Yield at <b>{macro_data['yield_val']}%</b> -> <i>Status: {yield_status}</i>.</div>
     <div class="macro-row">• <b>2. Crude Impact:</b> Brent at <b>${macro_data['brent']} ({macro_data['brent_chg']}%)</b> -> <i>Status: {brent_status}</i>.</div>
     <div class="macro-row">• <b>3. Institutional Flow:</b> FII: <b>{macro_data['fii_status']}</b> | DII: <b>{macro_data['dii_status']}</b>.</div>
-    <div class="macro-row">• <b>4. Sector-Confluence Engine:</b> Intraday ORB triggers are filtered by live sector bias ($S_{\\text{bias}}$).</div>
+    <div class="macro-row">• <b>4. Sector-Confluence Engine:</b> Intraday ORB triggers are filtered by live sector bias ($S_{{{'bias'}}}$).</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -352,11 +352,9 @@ def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
         today_df["VWAP"] = (today_df["TP"] * today_df["Volume"]).cumsum() / today_df["Volume"].cumsum()
         vwap_latest = float(today_df["VWAP"].iloc[-1])
 
-        # Sector Confluence Filter Integration
         sec_name = STOCK_TO_SECTOR.get(ticker_symbol, "Nifty 50 Core")
         s_bias = sector_biases.get(sec_name, 1)
 
-        # Apply Confluence Rule: Longs allowed only if sector bias == 1; Shorts allowed only if sector bias == -1
         filtered_breakout = breakout_cond and (ltp > vwap) and (rvol >= rvol_mult) and (s_bias == 1)
         filtered_breakdown = breakdown_cond and (ltp < vwap) and (rvol >= rvol_mult) and (s_bias == -1)
 
@@ -419,7 +417,7 @@ with tab_15m:
     st.markdown("""
     <div class="strategy-box-1">
         <h3 class="strategy-title">⚡ 15-Minute Confluence ORB (Sector-Aligned)</h3>
-        <p class="strategy-desc">Institutional 15-minute opening range breakout filtered by live sector bias ($S_{\\text{bias}}$) and RVOL.</p>
+        <p class="strategy-desc">Institutional 15-minute opening range breakout filtered by live sector bias and RVOL.</p>
     </div>
     """, unsafe_allow_html=True)
 
