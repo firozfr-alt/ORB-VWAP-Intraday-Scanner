@@ -132,7 +132,7 @@ st.markdown("""
 # ==========================================
 col_title, col_status = st.columns([3, 1])
 with col_title:
-    st.markdown("## ⚡ Institutional Multi-Strategy Platform (OVERA-Confluence Hybrid)")
+    st.markdown("## ⚡ Institutional Multi-Strategy Platform")
 with col_status:
     st.markdown("""
     <div style="text-align: right; padding-top: 10px;">
@@ -142,7 +142,7 @@ with col_status:
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown('<div class="subtitle-clean">Integrated OVERA 6-Factor Confluence (ORB, VWAP, EMA Stack, RSI, ADX, RVOL) + Sector Rotation.</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle-clean">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 STOCK_TO_SECTOR = {
@@ -256,11 +256,11 @@ yield_status = "🟢 Neutral/Favorable" if macro_data["yield_val"] < 4.3 else "�
 
 st.markdown(f"""
 <div class="summary-card">
-    <h3 class="summary-title">🌐 Live Macro & OVERA Confluence Engine</h3>
+    <h3 class="summary-title">🌐 Live Macro & Institutional Sentiment Engine</h3>
     <div class="macro-row">• <b>1. Global Yields & DXY:</b> US 10Y Yield at <b>{macro_data['yield_val']}%</b> -> <i>Status: {yield_status}</i>.</div>
     <div class="macro-row">• <b>2. Crude Impact:</b> Brent at <b>${macro_data['brent']} ({macro_data['brent_chg']}%)</b> -> <i>Status: {brent_status}</i>.</div>
     <div class="macro-row">• <b>3. Institutional Flow:</b> FII: <b>{macro_data['fii_status']}</b> | DII: <b>{macro_data['dii_status']}</b>.</div>
-    <div class="macro-row">• <b>4. OVERA 6-Factor Rules Active:</b> ORB + VWAP + EMA20/50 Stack + ADX > 18 + RSI Filter + Volume Confluence[cite: 1].</div>
+    <div class="macro-row">• <b>4. Sector-Confluence Engine:</b> Intraday ORB triggers are filtered by live sector bias ($S_{{{'bias'}}}$).</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -301,9 +301,8 @@ else:
     symbols_to_scan = WATCHLIST_PRESETS[selected_preset]
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Intraday Tuning (OVERA Filters)")
-rvol_mult = st.sidebar.slider("Min Intraday RVOL", 1.0, 3.0, 1.2, 0.1)
-min_adx = st.sidebar.slider("Min ADX Threshold", 10, 30, 18, 1)
+st.sidebar.subheader("Intraday Tuning")
+rvol_mult = st.sidebar.slider("Min Intraday RVOL", 1.0, 5.0, 1.5, 0.1)
 auto_refresh = st.sidebar.checkbox("Enable Auto-Refresh (every 60s)", value=False)
 if auto_refresh:
     st.sidebar.info("Auto-refresh active.")
@@ -314,9 +313,9 @@ st.sidebar.subheader("Swing Tuning")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
-# 5. TECHNICAL ENGINES (OVERA + CONFLUENCE)
+# 5. TECHNICAL ENGINES (CONFLUENCE ENHANCED)
 # ==========================================
-def analyze_overa_intraday(ticker_symbol: str, timeframe: str):
+def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
     try:
         stock = yf.Ticker(ticker_symbol)
         df = stock.history(period="14d", interval=timeframe)
@@ -330,7 +329,7 @@ def analyze_overa_intraday(ticker_symbol: str, timeframe: str):
 
         latest_date = df.index[-1].date()
         today_df = df[df.index.date == latest_date].copy()
-        if len(today_df) < 3: return {"error": "Waiting for range completion."}
+        if len(today_df) < 2: return {"error": "Waiting for range completion."}
 
         or_bar = today_df.iloc[0]
         or_high, or_low = float(or_bar["High"]), float(or_bar["Low"])
@@ -349,58 +348,22 @@ def analyze_overa_intraday(ticker_symbol: str, timeframe: str):
 
         rvol = today_opening_vol / avg_opening_volume if avg_opening_volume > 0 else 1.0
 
-        # Technical Indicators calculation (OVERA 6-Factor components)
         today_df["TP"] = (today_df["High"] + today_df["Low"] + today_df["Close"]) / 3
         today_df["VWAP"] = (today_df["TP"] * today_df["Volume"]).cumsum() / today_df["Volume"].cumsum()
         vwap_latest = float(today_df["VWAP"].iloc[-1])
 
-        # EMA Stack (20 and 50)
-        today_df["EMA20"] = ta.trend.ema_indicator(today_df["Close"], window=20)
-        today_df["EMA50"] = ta.trend.ema_indicator(today_df["Close"], window=50)
-        ema20 = float(today_df["EMA20"].iloc[-1])
-        ema50 = float(today_df["EMA50"].iloc[-1])
-
-        # RSI & ADX
-        rsi_series = ta.momentum.rsi(today_df["Close"], window=14)
-        rsi_val = float(rsi_series.iloc[-1]) if not rsi_series.empty else 50.0
-
-        adx_series = ta.trend.adx(today_df["High"], today_df["Low"], today_df["Close"], window=14)
-        adx_val = float(adx_series.iloc[-1]) if not adx_series.empty else 20.0
-
-        # Sector Confluence Bias Check
         sec_name = STOCK_TO_SECTOR.get(ticker_symbol, "Nifty 50 Core")
         s_bias = sector_biases.get(sec_name, 1)
 
-        # OVERA Full Rules + Sector Confluence
-        # LONG: close > OR_High, close > VWAP, EMA20 > EMA50, ADX > min_adx, RSI 50-70, RVOL >= rvol_mult, sector bias == 1
-        long_cond = (
-            breakout_cond and 
-            (ltp > vwap_latest) and 
-            (ema20 > ema50) and 
-            (adx_val >= min_adx) and 
-            (50 <= rsi_val <= 70) and 
-            (rvol >= rvol_mult) and 
-            (s_bias == 1)
-        )
-
-        # SHORT: close < OR_Low, close < VWAP, EMA20 < EMA50, ADX > min_adx, RSI 30-50, RVOL >= rvol_mult, sector bias == -1
-        short_cond = (
-            breakdown_cond and 
-            (ltp < vwap_latest) and 
-            (ema20 < ema50) and 
-            (adx_val >= min_adx) and 
-            (30 <= rsi_val <= 50) and 
-            (rvol >= rvol_mult) and 
-            (s_bias == -1)
-        )
+        filtered_breakout = breakout_cond and (ltp > vwap) and (rvol >= rvol_mult) and (s_bias == 1)
+        filtered_breakdown = breakdown_cond and (ltp < vwap) and (rvol >= rvol_mult) and (s_bias == -1)
 
         return {
             "Symbol": ticker_symbol.replace(".NS", ""), "LTP": round(ltp, 2),
             "OR_High": round(or_high, 2), "OR_Low": round(or_low, 2),
-            "VWAP": round(vwap_latest, 2), "RSI": round(rsi_val, 1),
-            "ADX": round(adx_val, 1), "RVOL": round(rvol, 2),
-            "LongSetup": long_cond, "ShortSetup": short_cond,
-            "Sector": sec_name
+            "VWAP": round(vwap_latest, 2), "RVOL": round(rvol, 2),
+            "Breakout": filtered_breakout, "Breakdown": filtered_breakdown,
+            "Sector": sec_name, "SectorBias": s_bias
         }
     except: return None
 
@@ -411,38 +374,31 @@ def analyze_swing_quant(ticker_symbol: str):
         if df.empty or len(df) < 200: return None
         
         closes = df["Close"]
-        sma_200 = closes.rolling(window=200).mean().iloc[-1]
-        ema_50 = ta.trend.ema_indicator(closes, window=50).iloc[-1]
-        ema_20 = ta.trend.ema_indicator(closes, window=20).iloc[-1]
+        log_ret = np.log(closes / closes.shift(1))
+        vol_60 = log_ret.rolling(window=60).std() * np.sqrt(252)
+        mom_score = np.log(closes / closes.shift(60)) / vol_60
         
-        # OVERA-S Liquid Swing Rules: Close > 200 SMA, 20-day high breakout, EMA stack, ADX > 20, Volume > 1.5x avg
-        highest_20 = closes.rolling(window=20).max().iloc[-2]
+        sma_50 = closes.rolling(window=50).mean()
+        vol_50 = closes.rolling(window=50).std()
+        z_price = (closes - sma_50) / vol_50
+        
+        vol_sma_20 = df["Volume"].rolling(window=20).mean()
+        rvol_20 = ((df["Volume"].shift(1) + df["Volume"].shift(2) + df["Volume"].shift(3)) / 3) / vol_sma_20
+        
+        alpha_score = 0.4 * mom_score + 0.3 * (z_price / 2.0) + 0.3 * rvol_20
+        
         ltp = float(closes.iloc[-1])
+        alpha = float(alpha_score.iloc[-1])
+        z_val = float(z_price.iloc[-1])
+        rvol_val = float(rvol_20.iloc[-1])
         
-        vol_sma_20 = df["Volume"].rolling(window=20).mean().iloc[-1]
-        curr_vol = df["Volume"].iloc[-1]
-        rvol_20 = curr_vol / vol_sma_20 if vol_sma_20 > 0 else 1.0
-
-        rsi_val = float(ta.momentum.rsi(closes, window=14).iloc[-1])
-        adx_val = float(ta.trend.adx(df["High"], df["Low"], closes, window=14).iloc[-1])
+        atr = float(ta.volatility.average_true_range(df["High"], df["Low"], df["Close"], window=14).iloc[-1])
+        is_setup = (alpha >= min_alpha) and (0.5 <= z_val <= 2.0) and (rvol_val >= 1.2)
         
-        atr = float(ta.volatility.average_true_range(df["High"], df["Low"], closes, window=14).iloc[-1])
-        
-        is_setup = (
-            (ltp > sma_200) and
-            (ltp > highest_20) and
-            (ema_20 > ema_50) and
-            (adx_val > 18) and
-            (55 <= rsi_val <= 75) and
-            (rvol_20 >= 1.5)
-        )
-
-        alpha_score = round((rsi_val / 50) * rvol_20, 2)
-
         return {
             "Symbol": ticker_symbol.replace(".NS", ""), "LTP": round(ltp, 2),
-            "Alpha Score": alpha_score, "RVOL_20": round(rvol_20, 2),
-            "ATR": round(atr, 2), "Is_Setup": is_setup
+            "Alpha Score": round(alpha, 2), "Z-Score": round(z_val, 2),
+            "RVOL_20": round(rvol_val, 2), "ATR": round(atr, 2), "Is_Setup": is_setup
         }
     except: return None
 
@@ -450,9 +406,9 @@ def analyze_swing_quant(ticker_symbol: str):
 # 6. TABBED DASHBOARD STRUCTURE (5 TABS)
 # ==========================================
 tab_15m, tab_5m, tab_swing, tab_best_sector, tab_institutional = st.tabs([
-    "⚡ OVERA 15-Min Confluence", 
-    "⚡ OVERA 5-Min Confluence", 
-    "📈 OVERA-S Liquid Swing",
+    "⚡ Intraday 15-Min ORB (Clean)", 
+    "⚡ Intraday 5-Min (Candle Close + RVOL)", 
+    "📈 Quant Multi-Factor Swing",
     "🚀 Best & Worst Sectors Intraday (5 Stocks Each)",
     "🏦 Institutional Flow & Sector Radar"
 ])
@@ -460,85 +416,91 @@ tab_15m, tab_5m, tab_swing, tab_best_sector, tab_institutional = st.tabs([
 with tab_15m:
     st.markdown("""
     <div class="strategy-box-1">
-        <h3 class="strategy-title">⚡ OVERA 15-Minute Intraday Confluence Engine</h3>
-        <p class="strategy-desc">Applies all 6 OVERA filters (ORB, VWAP, EMA20/50 stack, ADX > 18, RSI 50-70, Volume > 1.2x) plus sector alignment.</p>
+        <h3 class="strategy-title">⚡ 15-Minute Confluence ORB (Sector-Aligned)</h3>
+        <p class="strategy-desc">Institutional 15-minute opening range breakout filtered by live sector bias and RVOL.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run OVERA 15-Min Scan", type="primary", key="btn_15m"):
-        longs, shorts = [], []
+    if st.button("🚀 Run 15-Min Confluence Scan", type="primary", key="btn_15m"):
+        buy_signals, sell_signals = [], []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
             bar.progress((i + 1) / len(symbols_to_scan))
-            res = analyze_overa_intraday(sym, timeframe="15m")
-            if not res or "error" in res: continue
-            if res["LongSetup"]:
-                risk = round(res["LTP"] - res["OR_High"], 2)
-                longs.append({"Stock": res["Symbol"], "Sector": res["Sector"], "LTP (₹)": res["LTP"], "RSI": res["RSI"], "ADX": res["ADX"], "RVOL": f"{res['RVOL']}x"})
-            elif res["ShortSetup"]:
-                shorts.append({"Stock": res["Symbol"], "Sector": res["Sector"], "LTP (₹)": res["LTP"], "RSI": res["RSI"], "ADX": res["ADX"], "RVOL": f"{res['RVOL']}x"})
+            data = analyze_orb_strategy(sym, timeframe="15m")
+            if not data or "error" in data: continue
+            ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
+            if data["Breakout"]:
+                risk = round(ltp - or_l, 2)
+                buy_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+            elif data["Breakdown"]:
+                risk = round(or_h - ltp, 2)
+                sell_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
         bar.empty()
         c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("#### 🟢 OVERA Confirmed Longs")
-            st.dataframe(pd.DataFrame(longs) if longs else pd.DataFrame([{"Status": "No strict OVERA long confluence found"}]), use_container_width=True)
-        with c2:
-            st.markdown("#### 🔴 OVERA Confirmed Shorts")
-            st.dataframe(pd.DataFrame(shorts) if shorts else pd.DataFrame([{"Status": "No strict OVERA short confluence found"}]), use_container_width=True)
+        with c1: 
+            st.markdown("#### 🟢 Sector-Confirmed Longs")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakouts"}]), use_container_width=True)
+        with c2: 
+            st.markdown("#### 🔴 Sector-Confirmed Shorts")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakdowns"}]), use_container_width=True)
 
 with tab_5m:
     st.markdown("""
     <div class="strategy-box-2">
-        <h3 class="strategy-title">⚡ OVERA 5-Minute Intraday Confluence Scalp</h3>
-        <p class="strategy-desc">Strict 5-minute candle breakouts filtered through the 6-factor OVERA matrix.</p>
+        <h3 class="strategy-title">⚡ 5-Minute Confluence ORB (Sector-Aligned)</h3>
+        <p class="strategy-desc">Strict candle-close 5-minute breakout verified against parent sector momentum.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run OVERA 5-Min Scan", type="primary", key="btn_5m"):
-        longs, shorts = [], []
+    if st.button("🚀 Run Filtered 5-Min Confluence Scan", type="primary", key="btn_5m"):
+        buy_signals, sell_signals = [], []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
             bar.progress((i + 1) / len(symbols_to_scan))
-            res = analyze_overa_intraday(sym, timeframe="5m")
-            if not res or "error" in res: continue
-            if res["LongSetup"]:
-                longs.append({"Stock": res["Symbol"], "Sector": res["Sector"], "LTP (₹)": res["LTP"], "RSI": res["RSI"], "ADX": res["ADX"], "RVOL": f"{res['RVOL']}x"})
-            elif res["ShortSetup"]:
-                shorts.append({"Stock": res["Symbol"], "Sector": res["Sector"], "LTP (₹)": res["LTP"], "RSI": res["RSI"], "ADX": res["ADX"], "RVOL": f"{res['RVOL']}x"})
+            data = analyze_orb_strategy(sym, timeframe="5m")
+            if not data or "error" in data: continue
+            ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
+            if data["Breakout"]:
+                risk = round(ltp - or_l, 2)
+                buy_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+            elif data["Breakdown"]:
+                risk = round(or_h - ltp, 2)
+                sell_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
         bar.empty()
         c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("#### 🟢 OVERA 5m Longs")
-            st.dataframe(pd.DataFrame(longs) if longs else pd.DataFrame([{"Status": "No 5m strict confluence setups"}]), use_container_width=True)
-        with c2:
-            st.markdown("#### 🔴 OVERA 5m Shorts")
-            st.dataframe(pd.DataFrame(shorts) if shorts else pd.DataFrame([{"Status": "No 5m strict confluence setups"}]), use_container_width=True)
+        with c1: 
+            st.markdown("#### 🟢 Sector-Confirmed Longs")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakouts"}]), use_container_width=True)
+        with c2: 
+            st.markdown("#### 🔴 Sector-Confirmed Shorts")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakdowns"}]), use_container_width=True)
 
 with tab_swing:
     st.markdown("""
     <div class="strategy-box-3">
-        <h3 class="strategy-title">📈 OVERA-S Liquid Swing Scanner</h3>
-        <p class="strategy-desc">Scans for multi-day swing setups using the 200-SMA quality gate, 20-day high breakout, and volume surge[cite: 1].</p>
+        <h3 class="strategy-title">📈 Quantitative Multi-Factor Swing Scanner</h3>
+        <p class="strategy-desc">Evaluates momentum, Z-scores, and institutional volume accumulation.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run OVERA-S Swing Scan", type="primary", key="btn_swing"):
-        candidates = []
+    if st.button("🚀 Run Quant Swing Scan", type="primary", key="btn_swing"):
+        swing_candidates = []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
             bar.progress((i + 1) / len(symbols_to_scan))
-            s = analyze_swing_quant(sym)
-            if s and s["Is_Setup"]:
-                ltp, atr = s["LTP"], s["ATR"]
-                candidates.append({
-                    "Stock": s["Symbol"], "LTP (₹)": ltp, "Score": s["Alpha Score"],
-                    "RVOL (20d)": f"{s['RVOL_20']}x", "Stop-Loss": round(ltp - (2.0 * atr), 2), "Target": round(ltp + (3.0 * atr), 2)
+            s_data = analyze_swing_quant(sym)
+            if s_data and s_data["Is_Setup"]:
+                ltp, atr = s_data["LTP"], s_data["ATR"]
+                swing_candidates.append({
+                    "Stock": s_data["Symbol"], "LTP (₹)": ltp, "Alpha Score": s_data["Alpha Score"], 
+                    "Z-Score": s_data["Z-Score"], "RVOL (20d)": f"{s_data['RVOL_20']}x", 
+                    "Stop-Loss": round(ltp - (2.0 * atr), 2), "Target": round(ltp + (3.0 * atr), 2)
                 })
         bar.empty()
-        if candidates:
-            st.dataframe(pd.DataFrame(candidates).sort_values(by="Score", ascending=False), use_container_width=True)
+        if swing_candidates:
+            st.dataframe(pd.DataFrame(swing_candidates).sort_values(by="Alpha Score", ascending=False), use_container_width=True)
         else:
-            st.write("No swing setups match current OVERA-S Liquid criteria.")
+            st.write("No swing setups match current quantitative alpha criteria.")
 
 with tab_best_sector:
     st.markdown("""
