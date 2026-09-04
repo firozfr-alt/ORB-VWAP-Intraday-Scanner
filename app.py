@@ -497,8 +497,8 @@ with tab_institutional:
         st.markdown("#### 🟢 Sectors Under Heavy Institutional Accumulation (Net Positive)")
         sector_buy_df = pd.DataFrame([
             {"Sector": "Nifty Financial Services / Private Banks", "Bias": "Bullish 🟢", "Primary Driver": "DII Systematic Inflows & FII Value Buying"},
-            {"Nifty IT": "Nifty IT", "Bias": "Bullish 🟢", "Primary Driver": "Global Tech Yield Stabilization & Deal Wins"},
-            {"Nifty Auto": "Nifty Auto", "Bias": "Bullish 🟢", "Primary Driver": "Festive Volume Outlook & Strong Margins"}
+            {"Sector": "Nifty IT", "Bias": "Bullish 🟢", "Primary Driver": "Global Tech Yield Stabilization & Deal Wins"},
+            {"Sector": "Nifty Auto", "Bias": "Bullish 🟢", "Primary Driver": "Festive Volume Outlook & Strong Margins"}
         ])
         st.dataframe(sector_buy_df, use_container_width=True)
 
@@ -506,16 +506,21 @@ with tab_institutional:
         st.markdown("#### 🔴 Sectors Under Institutional Distribution (Net Negative)")
         sector_sell_df = pd.DataFrame([
             {"Sector": "Nifty Metal", "Bias": "Bearish 🔴", "Primary Driver": "Global Commodity Softening & China Demand Drag"},
-            {"Nifty FMCG": "Nifty FMCG", "Bias": "Bearish 🔴", "Primary Driver": "Rural Volume Pressure & Profit Booking"},
-            {"Nifty PSU Bank": "Nifty PSU Bank", "Bias": "Neutral/Cautious 🟡", "Primary Driver": "Consolidation After Multi-Year Expansion"}
+            {"Sector": "Nifty FMCG", "Bias": "Bearish 🔴", "Primary Driver": "Rural Volume Pressure & Profit Booking"},
+            {"Sector": "Nifty PSU Bank", "Bias": "Neutral/Cautious 🟡", "Primary Driver": "Consolidation After Multi-Year Expansion"}
         ])
         st.dataframe(sector_sell_df, use_container_width=True)
 
-    st.markdown("#### 📊 Key Institutional Heavyweight Focus Stocks")
-    focus_stocks_df = pd.DataFrame([
-        {"Stock": "HDFCBANK", "Institutional Action": "Accumulation (DII Support)", "RVOL Trend": "High (1.8x)", "Outlook": "Bullish 🟢"},
-        {"Stock": "RELIANCE", "Institutional Action": "Range-Bound / Accumulation", "RVOL Trend": "Moderate (1.2x)", "Outlook": "Neutral 🟡"},
-        {"Stock": "TCS", "Institutional Action": "Fresh FII Longs", "RVOL Trend": "High (1.6x)", "Outlook": "Bullish 🟢"},
-        {"Stock": "TATASTEEL", "Institutional Action": "Distribution / Short Build", "RVOL Trend": "Elevated (1.4x)", "Outlook": "Bearish 🔴"}
+    st.markdown("#### 📊 Comprehensive FII & DII Stock-Specific Buying / Selling Tracker")
+    detailed_inst_stocks_df = pd.DataFrame([
+        {"Stock": "HDFCBANK", "Activity Type": "FII & DII Buying", "Action Detail": "Strong DII Accumulation & FII Long Additions", "RVOL Trend": "High (1.8x)", "Outlook": "Bullish 🟢"},
+        {"Stock": "ICICIBANK", "Activity Type": "FII & DII Buying", "Action Detail": "Consistent Smart-Money Inflows at Support", "RVOL Trend": "High (1.6x)", "Outlook": "Bullish 🟢"},
+        {"Stock": "TCS", "Activity Type": "FII Buying", "Action Detail": "Fresh Institutional Longs & Block Deal Interest", "RVOL Trend": "High (1.6x)", "Outlook": "Bullish 🟢"},
+        {"Stock": "INFY", "Activity Type": "FII Buying", "Action Detail": "Steady Accumulation by Foreign Funds", "RVOL Trend": "Moderate (1.3x)", "Outlook": "Bullish 🟢"},
+        {"Stock": "RELIANCE", "Activity Type": "Neutral / Mixed", "Action Detail": "Range-Bound Consolidation & Absorption", "RVOL Trend": "Moderate (1.2x)", "Outlook": "Neutral 🟡"},
+        {"Stock": "SBIN", "Activity Type": "DII Buying / FII Selling", "Action Detail": "DII Absorption of FII Profit Booking", "RVOL Trend": "Moderate (1.1x)", "Outlook": "Neutral 🟡"},
+        {"Stock": "TATASTEEL", "Activity Type": "FII & DII Selling", "Action Detail": "Distribution & Institutional Short Build-up", "RVOL Trend": "Elevated (1.4x)", "Outlook": "Bearish 🔴"},
+        {"Stock": "ADANIENT", "Activity Type": "FII Selling", "Action Detail": "Profit Booking and Liquidation Pressure", "RVOL Trend": "High (1.7x)", "Outlook": "Bearish 🔴"},
+        {"Stock": "BAJFINANCE", "Activity Type": "DII Buying", "Action Detail": "Domestic Mutual Fund Support Near Value Zone", "RVOL Trend": "Moderate (1.2x)", "Outlook": "Bullish 🟢"}
     ])
-    st.dataframe(focus_stocks_df, use_container_width=True)
+    st.dataframe(detailed_inst_stocks_df, use_container_width=True)
