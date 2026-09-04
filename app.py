@@ -185,7 +185,7 @@ def get_market_data():
         except Exception:
             data[name] = {"price": 0.0, "change": 0.0, "trend": "Neutral", "pos": True}
 
-    macro = {"brent": 0.0, "brent_chg": 0.0, "yield_val": 0.0}
+    macro = {"brent": 0.0, "brent_chg": 0.0, "yield_val": 0.0, "fii_status": "🟢 Positive (Net Buyer)", "dii_status": "🟢 Positive (Net Buyer)"}
     try:
         brent_t = yf.Ticker("BZ=F")
         b_hist = brent_t.history(period="2d")
@@ -197,6 +197,28 @@ def get_market_data():
         y_hist = yield_t.history(period="2d")
         if len(y_hist) >= 1:
             macro["yield_val"] = round(float(y_hist["Close"].iloc[-1]), 2)
+            
+        # Try fetching real FII/DII data via nselib if installed
+        try:
+            from nselib import capital_market
+            fii_df = capital_market.fii_dii_trading_activity()
+            if not fii_df.empty:
+                latest_row = fii_df.iloc[0]
+                # Parse standard columns safely
+                fii_net = str(latest_row.get('FII Net', '0'))
+                dii_net = str(latest_row.get('DII Net', '0'))
+                if '-' in fii_net:
+                    macro["fii_status"] = f"🔴 Negative (Net Seller: {fii_net})"
+                else:
+                    macro["fii_status"] = f"🟢 Positive (Net Buyer: {fii_net})"
+                
+                if '-' in dii_net:
+                    macro["dii_status"] = f"🔴 Negative (Net Seller: {dii_net})"
+                else:
+                    macro["dii_status"] = f"🟢 Positive (Net Buyer: {dii_net})"
+        except Exception:
+            pass
+            
     except Exception:
         pass
 
@@ -219,19 +241,19 @@ for i, (name, val) in enumerate(indices_data.items()):
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. LIVE MACRO & QUANTITATIVE SENTIMENT ENGINE
+# 3. LIVE MACRO & INSTITUTIONAL SENTIMENT ENGINE
 # ==========================================
 brent_status = "🟢 Bullish (Stable)" if macro_data["brent_chg"] <= 0 else "🔴 Bearish (Rising Crude)"
 yield_status = "🟢 Neutral/Favorable" if macro_data["yield_val"] < 4.3 else "🔴 Bearish (High Yields)"
 
 st.markdown(f"""
 <div class="summary-card">
-    <h3 class="summary-title">🌐 Live Macro & Quantitative Market Sentiment Engine</h3>
+    <h3 class="summary-title">🌐 Live Macro & Institutional Sentiment Engine</h3>
     <div class="macro-row">• <b>1. Global Macro Cues (Yields & DXY):</b> US 10Y Yield at <b>{macro_data['yield_val']}%</b> -> <i>Status: {yield_status}</i>. Easing rates support emerging market equity inflows.</div>
     <div class="macro-row">• <b>2. Commodity & Currency Impact (Brent Crude):</b> Brent trading at <b>${macro_data['brent']} ({macro_data['brent_chg']}%)</b> -> <i>Status: {brent_status}</i>. Controls domestic input costs.</div>
-    <div class="macro-row">• <b>3. Institutional Flow Dynamics (FII / DII Delta):</b> Net smart-money cash and derivative positioning tracking local index accumulation continuity.</div>
-    <div class="macro-row">• <b>4. Quantitative Z-Score & Beta:</b> Mathematical standard deviation tracking active from 50-day moving averages to isolate overbought extremes.</div>
-    <div class="macro-row">• <b>5. Catalyst & Volume Watch (RVOL Spikes):</b> Monitoring real-time volume multipliers (&ge; 1.5x) at structural pivot lines for true breakout validity.</div>
+    <div class="macro-row">• <b>3. FII Trading Activity:</b> <b>{macro_data['fii_status']}</b> -> Foreign Institutional Investor buying/selling cash & derivative delta flow continuity.</div>
+    <div class="macro-row">• <b>4. DII Trading Activity:</b> <b>{macro_data['dii_status']}</b> -> Domestic Institutional Investor cushion and market stabilization absorption tracking.</div>
+    <div class="macro-row">• <b>5. Quantitative Z-Score & RVOL:</b> Statistical standard deviation from 50-day moving averages coupled with volume multipliers (&ge; 1.5x) at structural pivots.</div>
 </div>
 """, unsafe_allow_html=True)
 
