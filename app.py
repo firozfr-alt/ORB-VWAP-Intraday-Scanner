@@ -87,7 +87,7 @@ st.markdown("""
     }
 
     /* Strategy Highlight Boxes */
-    .strategy-box-1, .strategy-box-2, .strategy-box-3, .strategy-box-4 {
+    .strategy-box-1, .strategy-box-2, .strategy-box-3, .strategy-box-4, .strategy-box-5 {
         background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 47, 46, 0.95) 100%);
         border: 2px solid #10b981;
         padding: 24px;
@@ -386,12 +386,13 @@ def analyze_swing_quant(ticker_symbol: str):
     except: return None
 
 # ==========================================
-# 6. TABBED DASHBOARD STRUCTURE (4 TABS)
+# 6. TABBED DASHBOARD STRUCTURE (5 TABS)
 # ==========================================
-tab_15m, tab_5m, tab_swing, tab_institutional = st.tabs([
+tab_15m, tab_5m, tab_swing, tab_best_sector, tab_institutional = st.tabs([
     "⚡ Intraday 15-Min ORB (Clean)", 
     "⚡ Intraday 5-Min (Candle Close + RVOL)", 
     "📈 Quant Multi-Factor Swing",
+    "🚀 Best Performing Sector Intraday",
     "🏦 Institutional Flow & Sector Radar"
 ])
 
@@ -484,17 +485,82 @@ with tab_swing:
         else:
             st.write("No swing setups match current quantitative alpha criteria.")
 
-with tab_institutional:
+with tab_best_sector:
     st.markdown("""
     <div class="strategy-box-4">
-        <h3 class="strategy-title">🏦 Multi-Cap Institutional Flow & Sector Radar</h3>
+        <h3 class="strategy-title">🚀 Best Performing Sector Intraday Outperformer Scanner</h3>
+        <p class="strategy-desc">Scans leading daily sectors and isolates constituent stocks showing relative strength and volume breakouts.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🚀 Scan Leading Sector Outperformers", type="primary", key="btn_best_sector"):
+        # Live check for sector leaders using proxy indices
+        sector_proxies = {
+            "Nifty Bank": "^NSEBANK",
+            "Nifty IT": "^CNXIT",
+            "Nifty Auto": "^CNXAUTO",
+            "Nifty Pharma": "^CNXPHARMA",
+            "Nifty Metal": "^CNXMETAL"
+        }
+        sec_perf = []
+        for sec_name, sec_ticker in sector_proxies.items():
+            try:
+                t = yf.Ticker(sec_ticker)
+                h = t.history(period="2d")
+                if len(h) >= 2:
+                    pct = float(((h["Close"].iloc[-1] - h["Close"].iloc[-2]) / h["Close"].iloc[-2]) * 100)
+                    sec_perf.append({"Sector": sec_name, "Change (%)": round(pct, 2)})
+            except:
+                pass
+        
+        if sec_perf:
+            df_sec = pd.DataFrame(sec_perf).sort_values(by="Change (%)", ascending=False)
+            st.markdown("#### 🏆 Today's Sector Performance Ranking")
+            st.dataframe(df_sec, use_container_width=True)
+            
+            top_sector = df_sec.iloc[0]["Sector"]
+            st.markdown(f"**Top Leading Sector Identified:** `{top_sector}` 🟢. Scanning constituent outperformers...")
+            
+            # Map top sector to stocks
+            sector_stock_map = {
+                "Nifty Bank": ["HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS", "SBIN.NS"],
+                "Nifty IT": ["TCS.NS", "INFY.NS", "HCLTECH.NS", "TECHM.NS", "WIPRO.NS"],
+                "Nifty Auto": ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS", "BAJAJ-AUTO.NS", "EICHERMOT.NS"],
+                "Nifty Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS", "APOLLOHOSP.NS"],
+                "Nifty Metal": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "ADANIENT.NS"]
+            }
+            
+            stocks_to_check = sector_stock_map.get(top_sector, ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS"])
+            outperformers = []
+            for stck in stocks_to_check:
+                res = analyze_orb_strategy(stck, timeframe="15m")
+                if res and not "error" in res:
+                    outperformers.append({
+                        "Stock": res["Symbol"],
+                        "Sector": top_sector,
+                        "LTP (₹)": res["LTP"],
+                        "VWAP": res["VWAP"],
+                        "RVOL": f"{res['RVOL']}x",
+                        "Breakout Status": "Bullish Outperformer 🟢" if res["Breakout"] else "Consolidating 🟡"
+                    })
+            if outperformers:
+                st.dataframe(pd.DataFrame(outperformers), use_container_width=True)
+            else:
+                st.info("Gathering intraday tick confirmation for sector constituents...")
+        else:
+            st.warning("Unable to fetch live sector indices right now.")
+
+with tab_institutional:
+    st.markdown("""
+    <div class="strategy-box-5">
+        <h3 class="strategy-title">Multi-Cap Institutional Flow & Sector Radar</h3>
         <p class="strategy-desc">Monitors FII and DII accumulation and distribution across Large-Cap, Mid-Cap, and Small-Cap segments.</p>
     </div>
     """, unsafe_allow_html=True)
 
     col_sec1, col_sec2 = st.columns(2)
     with col_sec1:
-        st.markdown("#### 🟢 Sectors Under Heavy Institutional Accumulation")
+        st.markdown("#### Sectors Under Heavy Institutional Accumulation")
         sector_buy_df = pd.DataFrame([
             {"Sector": "Nifty Financial Services / Banks", "Bias": "Bullish 🟢", "Primary Driver": "DII Systematic Inflows & FII Large-Cap Buying"},
             {"Sector": "Nifty Midcap Momentum", "Bias": "Bullish 🟢", "Primary Driver": "Mutual Fund Inflows into High-Growth Mid-Caps"},
@@ -503,7 +569,7 @@ with tab_institutional:
         st.dataframe(sector_buy_df, use_container_width=True)
 
     with col_sec2:
-        st.markdown("#### 🔴 Sectors Under Institutional Distribution")
+        st.markdown("#### Sectors Under Institutional Distribution")
         sector_sell_df = pd.DataFrame([
             {"Sector": "Nifty Metal & Mining", "Bias": "Bearish 🔴", "Primary Driver": "Global Commodity Softening & FII Outflows"},
             {"Sector": "Nifty Smallcap Speculative", "Bias": "Cautious/Sell 🔴", "Primary Driver": "Profit Booking & Liquidity Normalization"},
@@ -511,23 +577,17 @@ with tab_institutional:
         ])
         st.dataframe(sector_sell_df, use_container_width=True)
 
-    st.markdown("#### 📊 Multi-Cap Institutional Tracker: Large-Cap, Mid-Cap & Small-Cap")
+    st.markdown("#### Multi-Cap Institutional Tracker: Large-Cap, Mid-Cap & Small-Cap")
     multicap_inst_df = pd.DataFrame([
-        # Large Cap
         {"Market Cap": "Large-Cap", "Stock": "HDFCBANK", "Institutional Action": "FII & DII Buying", "Detail": "Heavy DII Accumulation & FII Long Positions", "Outlook": "Bullish 🟢"},
         {"Market Cap": "Large-Cap", "Stock": "ICICIBANK", "Institutional Action": "FII & DII Buying", "Detail": "Consistent Institutional Support at Pivots", "Outlook": "Bullish 🟢"},
         {"Market Cap": "Large-Cap", "Stock": "TCS", "Institutional Action": "FII Buying", "Detail": "Fresh Foreign Fund Inflows & Deal Wins", "Outlook": "Bullish 🟢"},
         {"Market Cap": "Large-Cap", "Stock": "TATASTEEL", "Institutional Action": "FII & DII Selling", "Detail": "Distribution & Institutional Short Build-up", "Outlook": "Bearish 🔴"},
-        
-        # Mid Cap
         {"Market Cap": "Mid-Cap", "Stock": "POLYCAB", "Institutional Action": "FII & DII Buying", "Detail": "Strong Mutual Fund Accumulation & Growth Outlook", "Outlook": "Bullish 🟢"},
         {"Market Cap": "Mid-Cap", "Stock": "PERSISTENT", "Institutional Action": "FII Buying", "Detail": "Institutional Mid-Cap Tech Positioning", "Outlook": "Bullish 🟢"},
         {"Market Cap": "Mid-Cap", "Stock": "ASTRAL", "Institutional Action": "DII Buying / FII Selling", "Detail": "Domestic Funds Absorbing FII Offloading", "Outlook": "Neutral 🟡"},
         {"Market Cap": "Mid-Cap", "Stock": "VEDL", "Institutional Action": "FII Selling", "Detail": "Profit Booking on Commodity Volatility", "Outlook": "Bearish 🔴"},
-
-        # Small Cap
         {"Market Cap": "Small-Cap", "Stock": "KPITTECH", "Institutional Action": "DII Buying", "Detail": "Systematic DII Small-Cap Fund Allocations", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Small-Cap", "Stock": "CESC", "Institutional Action": "FII & DII Accumulation", "Detail": "Value Buying and Block Deal Interest", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Small-Cap", "Stock": "RBLBANK", "Institutional Action": "FII Selling", "Detail": "Institutional Portfolio Rebalancing & Exit", "Outlook": "Bearish 🔴"}
+        {"Market Cap": "Small-Cap", "Stock": "CESC", "Institutional Action": "FII & DII Accumulation", "Detail": "Value Buying and Block Deal Interest", "Outlook": "Bullish 🟢"}
     ])
     st.dataframe(multicap_inst_df, use_container_width=True)
