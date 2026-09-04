@@ -487,40 +487,47 @@ with tab_swing:
 with tab_institutional:
     st.markdown("""
     <div class="strategy-box-4">
-        <h3 class="strategy-title">🏦 Institutional Flow & Sector Allocation Tracker</h3>
-        <p class="strategy-desc">Monitors sector-wise smart money accumulation, block deals, and institutional buying/selling bias.</p>
+        <h3 class="strategy-title">🏦 Multi-Cap Institutional Flow & Sector Radar</h3>
+        <p class="strategy-desc">Monitors FII and DII accumulation and distribution across Large-Cap, Mid-Cap, and Small-Cap segments.</p>
     </div>
     """, unsafe_allow_html=True)
 
     col_sec1, col_sec2 = st.columns(2)
     with col_sec1:
-        st.markdown("#### 🟢 Sectors Under Heavy Institutional Accumulation (Net Positive)")
+        st.markdown("#### 🟢 Sectors Under Heavy Institutional Accumulation")
         sector_buy_df = pd.DataFrame([
-            {"Sector": "Nifty Financial Services / Private Banks", "Bias": "Bullish 🟢", "Primary Driver": "DII Systematic Inflows & FII Value Buying"},
-            {"Sector": "Nifty IT", "Bias": "Bullish 🟢", "Primary Driver": "Global Tech Yield Stabilization & Deal Wins"},
-            {"Sector": "Nifty Auto", "Bias": "Bullish 🟢", "Primary Driver": "Festive Volume Outlook & Strong Margins"}
+            {"Sector": "Nifty Financial Services / Banks", "Bias": "Bullish 🟢", "Primary Driver": "DII Systematic Inflows & FII Large-Cap Buying"},
+            {"Sector": "Nifty Midcap Momentum", "Bias": "Bullish 🟢", "Primary Driver": "Mutual Fund Inflows into High-Growth Mid-Caps"},
+            {"Sector": "Nifty Auto & Manufacturing", "Bias": "Bullish 🟢", "Primary Driver": "Strong Domestic Earnings & Institutional Stakes"}
         ])
         st.dataframe(sector_buy_df, use_container_width=True)
 
     with col_sec2:
-        st.markdown("#### 🔴 Sectors Under Institutional Distribution (Net Negative)")
+        st.markdown("#### 🔴 Sectors Under Institutional Distribution")
         sector_sell_df = pd.DataFrame([
-            {"Sector": "Nifty Metal", "Bias": "Bearish 🔴", "Primary Driver": "Global Commodity Softening & China Demand Drag"},
-            {"Sector": "Nifty FMCG", "Bias": "Bearish 🔴", "Primary Driver": "Rural Volume Pressure & Profit Booking"},
-            {"Sector": "Nifty PSU Bank", "Bias": "Neutral/Cautious 🟡", "Primary Driver": "Consolidation After Multi-Year Expansion"}
+            {"Sector": "Nifty Metal & Mining", "Bias": "Bearish 🔴", "Primary Driver": "Global Commodity Softening & FII Outflows"},
+            {"Sector": "Nifty Smallcap Speculative", "Bias": "Cautious/Sell 🔴", "Primary Driver": "Profit Booking & Liquidity Normalization"},
+            {"Sector": "Nifty FMCG", "Bias": "Neutral 🟡", "Primary Driver": "Sector Rotation into High-Beta Segments"}
         ])
         st.dataframe(sector_sell_df, use_container_width=True)
 
-    st.markdown("#### 📊 Comprehensive FII & DII Stock-Specific Buying / Selling Tracker")
-    detailed_inst_stocks_df = pd.DataFrame([
-        {"Stock": "HDFCBANK", "Activity Type": "FII & DII Buying", "Action Detail": "Strong DII Accumulation & FII Long Additions", "RVOL Trend": "High (1.8x)", "Outlook": "Bullish 🟢"},
-        {"Stock": "ICICIBANK", "Activity Type": "FII & DII Buying", "Action Detail": "Consistent Smart-Money Inflows at Support", "RVOL Trend": "High (1.6x)", "Outlook": "Bullish 🟢"},
-        {"Stock": "TCS", "Activity Type": "FII Buying", "Action Detail": "Fresh Institutional Longs & Block Deal Interest", "RVOL Trend": "High (1.6x)", "Outlook": "Bullish 🟢"},
-        {"Stock": "INFY", "Activity Type": "FII Buying", "Action Detail": "Steady Accumulation by Foreign Funds", "RVOL Trend": "Moderate (1.3x)", "Outlook": "Bullish 🟢"},
-        {"Stock": "RELIANCE", "Activity Type": "Neutral / Mixed", "Action Detail": "Range-Bound Consolidation & Absorption", "RVOL Trend": "Moderate (1.2x)", "Outlook": "Neutral 🟡"},
-        {"Stock": "SBIN", "Activity Type": "DII Buying / FII Selling", "Action Detail": "DII Absorption of FII Profit Booking", "RVOL Trend": "Moderate (1.1x)", "Outlook": "Neutral 🟡"},
-        {"Stock": "TATASTEEL", "Activity Type": "FII & DII Selling", "Action Detail": "Distribution & Institutional Short Build-up", "RVOL Trend": "Elevated (1.4x)", "Outlook": "Bearish 🔴"},
-        {"Stock": "ADANIENT", "Activity Type": "FII Selling", "Action Detail": "Profit Booking and Liquidation Pressure", "RVOL Trend": "High (1.7x)", "Outlook": "Bearish 🔴"},
-        {"Stock": "BAJFINANCE", "Activity Type": "DII Buying", "Action Detail": "Domestic Mutual Fund Support Near Value Zone", "RVOL Trend": "Moderate (1.2x)", "Outlook": "Bullish 🟢"}
+    st.markdown("#### 📊 Multi-Cap Institutional Tracker: Large-Cap, Mid-Cap & Small-Cap")
+    multicap_inst_df = pd.DataFrame([
+        # Large Cap
+        {"Market Cap": "Large-Cap", "Stock": "HDFCBANK", "Institutional Action": "FII & DII Buying", "Detail": "Heavy DII Accumulation & FII Long Positions", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Large-Cap", "Stock": "ICICIBANK", "Institutional Action": "FII & DII Buying", "Detail": "Consistent Institutional Support at Pivots", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Large-Cap", "Stock": "TCS", "Institutional Action": "FII Buying", "Detail": "Fresh Foreign Fund Inflows & Deal Wins", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Large-Cap", "Stock": "TATASTEEL", "Institutional Action": "FII & DII Selling", "Detail": "Distribution & Institutional Short Build-up", "Outlook": "Bearish 🔴"},
+        
+        # Mid Cap
+        {"Market Cap": "Mid-Cap", "Stock": "POLYCAB", "Institutional Action": "FII & DII Buying", "Detail": "Strong Mutual Fund Accumulation & Growth Outlook", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Mid-Cap", "Stock": "PERSISTENT", "Institutional Action": "FII Buying", "Detail": "Institutional Mid-Cap Tech Positioning", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Mid-Cap", "Stock": "ASTRAL", "Institutional Action": "DII Buying / FII Selling", "Detail": "Domestic Funds Absorbing FII Offloading", "Outlook": "Neutral 🟡"},
+        {"Market Cap": "Mid-Cap", "Stock": "VEDL", "Institutional Action": "FII Selling", "Detail": "Profit Booking on Commodity Volatility", "Outlook": "Bearish 🔴"},
+
+        # Small Cap
+        {"Market Cap": "Small-Cap", "Stock": "KPITTECH", "Institutional Action": "DII Buying", "Detail": "Systematic DII Small-Cap Fund Allocations", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Small-Cap", "Stock": "CESC", "Institutional Action": "FII & DII Accumulation", "Detail": "Value Buying and Block Deal Interest", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Small-Cap", "Stock": "RBLBANK", "Institutional Action": "FII Selling", "Detail": "Institutional Portfolio Rebalancing & Exit", "Outlook": "Bearish 🔴"}
     ])
-    st.dataframe(detailed_inst_stocks_df, use_container_width=True)
+    st.dataframe(multicap_inst_df, use_container_width=True)
