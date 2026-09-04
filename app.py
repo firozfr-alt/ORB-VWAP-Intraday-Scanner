@@ -145,6 +145,27 @@ with col_status:
 st.markdown('<div class="subtitle-clean">Clean 15-Min ORB, Filtered 5-Min Candle-Close ORB, and Quant Swing Models.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
+STOCK_TO_SECTOR = {
+    "HDFCBANK.NS": "Nifty Bank", "ICICIBANK.NS": "Nifty Bank", "AXISBANK.NS": "Nifty Bank", "KOTAKBANK.NS": "Nifty Bank", "SBIN.NS": "Nifty Bank", "INDUSINDBK.NS": "Nifty Bank", "BANKBARODA.NS": "Nifty Bank", "PNB.NS": "Nifty Bank", "CANBK.NS": "Nifty Bank",
+    "TCS.NS": "Nifty IT", "INFY.NS": "Nifty IT", "HCLTECH.NS": "Nifty IT", "TECHM.NS": "Nifty IT", "WIPRO.NS": "Nifty IT",
+    "TATAMOTORS.NS": "Nifty Auto", "MARUTI.NS": "Nifty Auto", "M&M.NS": "Nifty Auto", "BAJAJ-AUTO.NS": "Nifty Auto", "EICHERMOT.NS": "Nifty Auto", "MOTHERSON.NS": "Nifty Auto",
+    "TATASTEEL.NS": "Nifty Metal", "HINDALCO.NS": "Nifty Metal", "JSWSTEEL.NS": "Nifty Metal", "VEDL.NS": "Nifty Metal", "ADANIENT.NS": "Nifty Metal", "JINDALSTEL.NS": "Nifty Metal",
+    "RELIANCE.NS": "Nifty 50 Core", "BAJFINANCE.NS": "Nifty Financial Services", "ADANIPORTS.NS": "Nifty 50 Core", "DLF.NS": "Nifty Realty", "ZEEL.NS": "Nifty Media", "ITC.NS": "Nifty FMCG", "BHARTIARTL.NS": "Nifty 50 Core", "LT.NS": "Nifty 50 Core", "SUNPHARMA.NS": "Nifty Pharma", "TITAN.NS": "Nifty 50 Core", "BAJAJFINSV.NS": "Nifty Financial Services", "NTPC.NS": "Nifty 50 Core", "POWERGRID.NS": "Nifty 50 Core", "HINDUNILVR.NS": "Nifty FMCG"
+}
+
+SECTOR_PROXIES = {
+    "Nifty Bank": "^NSEBANK",
+    "Nifty IT": "^CNXIT",
+    "Nifty Auto": "^CNXAUTO",
+    "Nifty Metal": "^CNXMETAL",
+    "Nifty Pharma": "^CNXPHARMA",
+    "Nifty FMCG": "^CNXFMCG",
+    "Nifty Realty": "^CNXREALTY",
+    "Nifty Media": "^CNXMEDIA",
+    "Nifty 50 Core": "^NSEI",
+    "Nifty Financial Services": "^CNXFIN"
+}
+
 @st.cache_data(ttl=60)
 def get_market_data():
     indices = {"Nifty 50": "^NSEI", "Bank Nifty": "^NSEBANK"}
@@ -194,7 +215,24 @@ def get_market_data():
 
     return data, macro
 
+@st.cache_data(ttl=60)
+def get_sector_biases():
+    biases = {}
+    for sec, ticker in SECTOR_PROXIES.items():
+        try:
+            t = yf.Ticker(ticker)
+            h = t.history(period="2d")
+            if len(h) >= 2:
+                chg = float(h["Close"].iloc[-1] - h["Close"].iloc[-2])
+                biases[sec] = 1 if chg >= 0 else -1
+            else:
+                biases[sec] = 1
+        except:
+            biases[sec] = 1
+    return biases
+
 indices_data, macro_data = get_market_data()
+sector_biases = get_sector_biases()
 
 idx_cols = st.columns(2)
 for i, (name, val) in enumerate(indices_data.items()):
@@ -222,6 +260,7 @@ st.markdown(f"""
     <div class="macro-row">• <b>1. Global Yields & DXY:</b> US 10Y Yield at <b>{macro_data['yield_val']}%</b> -> <i>Status: {yield_status}</i>.</div>
     <div class="macro-row">• <b>2. Crude Impact:</b> Brent at <b>${macro_data['brent']} ({macro_data['brent_chg']}%)</b> -> <i>Status: {brent_status}</i>.</div>
     <div class="macro-row">• <b>3. Institutional Flow:</b> FII: <b>{macro_data['fii_status']}</b> | DII: <b>{macro_data['dii_status']}</b>.</div>
+    <div class="macro-row">• <b>4. Sector-Confluence Engine:</b> Intraday ORB triggers are filtered by live sector bias ($S_{\\text{bias}}$).</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -274,7 +313,7 @@ st.sidebar.subheader("Swing Tuning")
 min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
 
 # ==========================================
-# 5. TECHNICAL ENGINES (EXACT UNTOUCHED LOGIC)
+# 5. TECHNICAL ENGINES (CONFLUENCE ENHANCED)
 # ==========================================
 def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
     try:
@@ -313,11 +352,20 @@ def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
         today_df["VWAP"] = (today_df["TP"] * today_df["Volume"]).cumsum() / today_df["Volume"].cumsum()
         vwap_latest = float(today_df["VWAP"].iloc[-1])
 
+        # Sector Confluence Filter Integration
+        sec_name = STOCK_TO_SECTOR.get(ticker_symbol, "Nifty 50 Core")
+        s_bias = sector_biases.get(sec_name, 1)
+
+        # Apply Confluence Rule: Longs allowed only if sector bias == 1; Shorts allowed only if sector bias == -1
+        filtered_breakout = breakout_cond and (ltp > vwap) and (rvol >= rvol_mult) and (s_bias == 1)
+        filtered_breakdown = breakdown_cond and (ltp < vwap) and (rvol >= rvol_mult) and (s_bias == -1)
+
         return {
             "Symbol": ticker_symbol.replace(".NS", ""), "LTP": round(ltp, 2),
             "OR_High": round(or_high, 2), "OR_Low": round(or_low, 2),
             "VWAP": round(vwap_latest, 2), "RVOL": round(rvol, 2),
-            "Breakout": breakout_cond, "Breakdown": breakdown_cond
+            "Breakout": filtered_breakout, "Breakdown": filtered_breakdown,
+            "Sector": sec_name, "SectorBias": s_bias
         }
     except: return None
 
@@ -370,12 +418,12 @@ tab_15m, tab_5m, tab_swing, tab_best_sector, tab_institutional = st.tabs([
 with tab_15m:
     st.markdown("""
     <div class="strategy-box-1">
-        <h3 class="strategy-title">⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)</h3>
-        <p class="strategy-desc">Low-noise institutional strategy utilizing a 15-minute opening window.</p>
+        <h3 class="strategy-title">⚡ 15-Minute Confluence ORB (Sector-Aligned)</h3>
+        <p class="strategy-desc">Institutional 15-minute opening range breakout filtered by live sector bias ($S_{\\text{bias}}$) and RVOL.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run 15-Min Scan", type="primary", key="btn_15m"):
+    if st.button("🚀 Run 15-Min Confluence Scan", type="primary", key="btn_15m"):
         buy_signals, sell_signals = [], []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
@@ -383,30 +431,30 @@ with tab_15m:
             data = analyze_orb_strategy(sym, timeframe="15m")
             if not data or "error" in data: continue
             ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
-            if data["Breakout"] and (ltp > vwap) and (rvol >= rvol_mult):
+            if data["Breakout"]:
                 risk = round(ltp - or_l, 2)
-                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
-            elif data["Breakdown"] and (ltp < vwap) and (rvol >= rvol_mult):
+                buy_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+            elif data["Breakdown"]:
                 risk = round(or_h - ltp, 2)
-                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+                sell_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
         bar.empty()
         c1, c2 = st.columns(2)
         with c1: 
-            st.markdown("#### 🟢 Long Setups")
-            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Clean Breakouts"}]), use_container_width=True)
+            st.markdown("#### 🟢 Sector-Confirmed Longs")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakouts"}]), use_container_width=True)
         with c2: 
-            st.markdown("#### 🔴 Short Setups")
-            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Clean Breakdowns"}]), use_container_width=True)
+            st.markdown("#### 🔴 Sector-Confirmed Shorts")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakdowns"}]), use_container_width=True)
 
 with tab_5m:
     st.markdown("""
     <div class="strategy-box-2">
-        <h3 class="strategy-title">⚡ 5-Minute ORB with Strict Candle Close + RVOL</h3>
-        <p class="strategy-desc">Fights 5-minute noise by requiring candle-close confirmation outside the range.</p>
+        <h3 class="strategy-title">⚡ 5-Minute Confluence ORB (Sector-Aligned)</h3>
+        <p class="strategy-desc">Strict candle-close 5-minute breakout verified against parent sector momentum.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run Filtered 5-Min Scan", type="primary", key="btn_5m"):
+    if st.button("🚀 Run Filtered 5-Min Confluence Scan", type="primary", key="btn_5m"):
         buy_signals, sell_signals = [], []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
@@ -414,20 +462,20 @@ with tab_5m:
             data = analyze_orb_strategy(sym, timeframe="5m")
             if not data or "error" in data: continue
             ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
-            if data["Breakout"] and (ltp > vwap) and (rvol >= rvol_mult):
+            if data["Breakout"]:
                 risk = round(ltp - or_l, 2)
-                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
-            elif data["Breakdown"] and (ltp < vwap) and (rvol >= rvol_mult):
+                buy_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+            elif data["Breakdown"]:
                 risk = round(or_h - ltp, 2)
-                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+                sell_signals.append({"Stock": data["Symbol"], "Sector": data["Sector"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
         bar.empty()
         c1, c2 = st.columns(2)
         with c1: 
-            st.markdown("#### 🟢 Long Setups")
-            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Confirmed Breakouts"}]), use_container_width=True)
+            st.markdown("#### 🟢 Sector-Confirmed Longs")
+            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakouts"}]), use_container_width=True)
         with c2: 
-            st.markdown("#### 🔴 Short Setups")
-            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Confirmed Breakdowns"}]), use_container_width=True)
+            st.markdown("#### 🔴 Sector-Confirmed Shorts")
+            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Sector-Aligned Breakdowns"}]), use_container_width=True)
 
 with tab_swing:
     st.markdown("""
