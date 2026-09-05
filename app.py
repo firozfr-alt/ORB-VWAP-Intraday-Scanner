@@ -70,9 +70,7 @@ def run_intraday_strategy(ticker_symbol):
 
     # Feature Engineering for ML Filter
     df["VWAP_Dist"] = (df["Close"] - df["VWAP"]) / df["VWAP"]
-    df["Target"] = np.where(
-        df["Close"].shift(-1) > df["Close"], 1, 0
-    )  # Next candle direction
+    df["Target"] = np.where(df["Close"].shift(-1) > df["Close"], 1, 0)
 
     # Train/Test Split for XGBoost
     features = ["VWAP_Dist", "Volume_Spike"]
@@ -80,8 +78,8 @@ def run_intraday_strategy(ticker_symbol):
     y = df["Target"]
 
     split = int(len(df) * 0.8)
-    X_train, X_test = X.iloc[:split], X.iloc[split:]
-    y_train, y_test = y.iloc[:split], y.iloc[split:]
+    X_train = X.iloc[:split]
+    y_train = y.iloc[:split]
 
     # Fit XGBoost Classifier to eliminate false breakouts
     model = XGBClassifier(n_estimators=50, max_depth=3, learning_rate=0.05)
@@ -161,7 +159,7 @@ def run_swing_strategy(ticker_symbol):
 
     # Pullback Condition: Price near 20 EMA on declining volume during an overall uptrend
     df["Trend_Up"] = (df["EMA_20"] > df["EMA_50"]) & (df["Close"] > df["EMA_50"])
-    df["Pullback"] = (df["Low"] <= df["EMA_20 * 1.01") & (
+    df["Pullback"] = (df["Low"] <= df["EMA_20"] * 1.01) & (
         df["Volume"] < df["Volume_SMA"]
     )
     df["Swing_Buy_Signal"] = df["Trend_Up"] & df["Pullback"]
@@ -179,7 +177,18 @@ def run_swing_strategy(ticker_symbol):
 
     st.markdown("### Recent Daily Swing Setup Data")
     st.dataframe(
-        df[["Open", "High", "Low", "Close", "Volume", "EMA_20", "ATR", "Swing_Buy_Signal"]].tail(10)
+        df[
+            [
+                "Open",
+                "High",
+                "Low",
+                "Close",
+                "Volume",
+                "EMA_20",
+                "ATR",
+                "Swing_Buy_Signal",
+            ]
+        ].tail(10)
     )
 
 
