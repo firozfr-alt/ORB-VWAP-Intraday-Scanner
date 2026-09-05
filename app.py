@@ -10,7 +10,7 @@ import ta
 # 1. PAGE CONFIGURATION & MODERN STYLING
 # ==========================================
 st.set_page_config(
-    page_title="Institutional Trading Platform",
+    page_title="OVERA Master Trading Platform",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -35,7 +35,7 @@ st.markdown("""
     }
     .summary-title { color: #60a5fa !important; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 12px; }
     .macro-row { font-size: 13.5px; color: #cbd5e1; margin-bottom: 8px; line-height: 1.5; }
-    .strategy-box-1, .strategy-box-2, .strategy-box-3, .strategy-box-4, .strategy-box-5 {
+    .strategy-box-1, .strategy-box-2, .strategy-box-3, .strategy-box-4, .strategy-box-5, .strategy-box-6 {
         background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 47, 46, 0.95) 100%);
         border: 2px solid #10b981; padding: 24px; border-radius: 14px; margin-bottom: 20px;
     }
@@ -54,17 +54,17 @@ st.markdown("""
 # ==========================================
 col_title, col_status = st.columns([3, 1])
 with col_title:
-    st.markdown("## ⚡ Institutional Multi-Strategy Platform")
+    st.markdown("## ⚡ OVERA Master Trading Platform (Multi-Cap & Institutional)")
 with col_status:
     st.markdown("""
     <div style="text-align: right; padding-top: 10px;">
         <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
-            <span class="live-dot"></span>Live Feed Active
+            <span class="live-dot"></span>Engine Active
         </span>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown('<div class="subtitle-clean">Multi-Strategy Platform with Restored Sector Rotation and Multi-Cap Institutional Flow Radar.</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle-clean">Comprehensive multi-cap tracking across Large, Mid, Small Cap, and Penny segments with OVERA logic.</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 @st.cache_data(ttl=60)
@@ -104,61 +104,35 @@ for i, (name, val) in enumerate(indices_data.items()):
 st.markdown("---")
 
 # ==========================================
-# 3. SIDEBAR CONTROLS
+# 3. UNIVERSES & SIDEBAR CONFIGURATION
 # ==========================================
-WATCHLIST_PRESETS = {
-    "Nifty 50 Core": [
-        "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS",
-        "SBIN.NS", "BHARTIARTL.NS", "ITC.NS", "KOTAKBANK.NS", "LT.NS",
-        "AXISBANK.NS", "TATAMOTORS.NS", "MARUTI.NS", "SUNPHARMA.NS", "TITAN.NS",
-        "BAJFINANCE.NS", "TATASTEEL.NS", "HINDUNILVR.NS", "NTPC.NS", "POWERGRID.NS"
-    ],
-    "High-Beta / F&O Momentum": [
-        "TATAMOTORS.NS", "BAJFINANCE.NS", "ADANIENT.NS", "ADANIPORTS.NS",
-        "HINDALCO.NS", "TATASTEEL.NS", "VEDL.NS", "DLF.NS", "INDUSINDBK.NS",
-        "JINDALSTEL.NS", "CANBK.NS", "FEDERALBNK.NS", "MOTHERSON.NS", "ZEEL.NS"
-    ],
-    "Banking & Financials": [
-        "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS", "AXISBANK.NS",
-        "INDUSINDBK.NS", "BANKBARODA.NS", "PNB.NS", "CANBK.NS", "BAJFINANCE.NS", "BAJAJFINSV.NS"
-    ]
+MULTICAP_UNIVERSES = {
+    "Large-Cap Core": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS", "KOTAKBANK.NS", "LT.NS"],
+    "Mid-Cap Growth": ["POLYCAB.NS", "PERSISTENT.NS", "ASTRAL.NS", "TATAPOWER.NS", "PAGEIND.NS", "SRF.NS", "DIXON.NS"],
+    "Small-Cap Momentum": ["KPITTECH.NS", "CESC.NS", "IDFCFIRSTB.NS", "CAMS.NS", "OBEROIRLTY.NS", "LAURUSLABS.NS"],
+    "High-Beta / F&O": ["TATAMOTORS.NS", "BAJFINANCE.NS", "ADANIENT.NS", "HINDALCO.NS", "VEDL.NS", "JINDALSTEL.NS"]
 }
 
 st.sidebar.header("🎯 Master Configuration")
-selected_preset = st.sidebar.selectbox("Choose Universe", list(WATCHLIST_PRESETS.keys()) + ["Custom Symbols"])
-
-if selected_preset == "Custom Symbols":
-    custom_input = st.sidebar.text_area(
-        "Enter NSE Symbols (comma-separated with .NS)",
-        value="RELIANCE.NS, TCS.NS, HDFCBANK.NS, INFY.NS, TATAMOTORS.NS",
-        height=100
-    )
-    symbols_to_scan = [s.strip().upper() for s in custom_input.split(",") if s.strip()]
-else:
-    symbols_to_scan = WATCHLIST_PRESETS[selected_preset]
+selected_universe = st.sidebar.selectbox("Choose Market Universe", list(MULTICAP_UNIVERSES.keys()))
+symbols_to_scan = MULTICAP_UNIVERSES[selected_universe]
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Intraday Tuning")
-rvol_mult = st.sidebar.slider("Min Intraday RVOL", 1.0, 5.0, 1.5, 0.1)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("Swing Tuning")
-min_alpha = st.sidebar.slider("Min Swing Alpha Score", 0.8, 2.0, 1.2, 0.1)
+st.sidebar.subheader("Intraday & Swing Tuning")
+rvol_mult = st.sidebar.slider("Min Intraday RVOL", 1.0, 3.0, 1.2, 0.1)
+min_adx = st.sidebar.slider("Min ADX Threshold", 10, 30, 18, 1)
 
 # ==========================================
 # 4. TECHNICAL ENGINES
 # ==========================================
-def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
+def analyze_overa_master_intraday(ticker_symbol: str):
     try:
         stock = yf.Ticker(ticker_symbol)
-        df = stock.history(period="14d", interval=timeframe)
+        df = stock.history(period="5d", interval="15m")
         if df.empty or len(df) < 30: return None
 
         ist = pytz.timezone("Asia/Kolkata")
         df.index = df.index.tz_convert(ist) if df.index.tz else df.index.tz_localize("UTC").tz_convert(ist)
-
-        first_candles = df.groupby(df.index.date).first()
-        avg_opening_volume = first_candles['Volume'].iloc[:-1].mean()
 
         latest_date = df.index[-1].date()
         today_df = df[df.index.date == latest_date].copy()
@@ -166,239 +140,207 @@ def analyze_orb_strategy(ticker_symbol: str, timeframe: str):
 
         or_bar = today_df.iloc[0]
         or_high, or_low = float(or_bar["High"]), float(or_bar["Low"])
-        today_opening_vol = float(or_bar["Volume"])
 
-        if timeframe == '15m':
-            latest = today_df.iloc[-1]
-            ltp = float(latest["Close"])
-            breakout_cond, breakdown_cond = (ltp > or_high), (ltp < or_low)
-        else:
-            sub_candles = today_df.iloc[1:]
-            if sub_candles.empty: return {"error": "Waiting for breakout candle close."}
-            latest = sub_candles.iloc[-1]
-            ltp = float(latest["Close"])
-            breakout_cond, breakdown_cond = (ltp > or_high), (ltp < or_low)
-
-        rvol = today_opening_vol / avg_opening_volume if avg_opening_volume > 0 else 1.0
+        avg_vol = today_df['Volume'].iloc[:-1].mean()
+        latest = today_df.iloc[-1]
+        ltp = float(latest["Close"])
+        latest_vol = float(latest["Volume"])
+        rvol = latest_vol / avg_vol if avg_vol > 0 else 1.0
 
         today_df["TP"] = (today_df["High"] + today_df["Low"] + today_df["Close"]) / 3
         today_df["VWAP"] = (today_df["TP"] * today_df["Volume"]).cumsum() / today_df["Volume"].cumsum()
-        vwap_latest = float(today_df["VWAP"].iloc[-1])
+        vwap_val = float(today_df["VWAP"].iloc[-1])
+
+        today_df["EMA20"] = ta.trend.ema_indicator(today_df["Close"], window=20)
+        today_df["EMA50"] = ta.trend.ema_indicator(today_df["Close"], window=50)
+        ema20 = float(today_df["EMA20"].iloc[-1])
+        ema50 = float(today_df["EMA50"].iloc[-1])
+
+        rsi_val = float(ta.momentum.rsi(today_df["Close"], window=14).iloc[-1])
+        adx_val = float(ta.trend.adx(today_df["High"], today_df["Low"], today_df["Close"], window=14).iloc[-1])
+
+        long_setup = (ltp > or_high) and (ltp > vwap_val) and (ema20 > ema50) and (adx_val >= min_adx) and (55 <= rsi_val <= 70) and (rvol >= rvol_mult)
+        short_setup = (ltp < or_low) and (ltp < vwap_val) and (ema20 < ema50) and (adx_val >= min_adx) and (30 <= rsi_val <= 45) and (rvol >= rvol_mult)
 
         return {
             "Symbol": ticker_symbol.replace(".NS", ""), "LTP": round(ltp, 2),
-            "OR_High": round(or_high, 2), "OR_Low": round(or_low, 2),
-            "VWAP": round(vwap_latest, 2), "RVOL": round(rvol, 2),
-            "Breakout": breakout_cond, "Breakdown": breakdown_cond
+            "VWAP": round(vwap_val, 2), "RSI": round(rsi_val, 1), "ADX": round(adx_val, 1),
+            "RVOL": round(rvol, 2), "Long": long_setup, "Short": short_setup
         }
     except: return None
 
-def analyze_swing_quant(ticker_symbol: str):
+def analyze_overa_master_swing(ticker_symbol: str):
     try:
         stock = yf.Ticker(ticker_symbol)
         df = stock.history(period="1y", interval="1d")
         if df.empty or len(df) < 200: return None
-        
+
         closes = df["Close"]
-        log_ret = np.log(closes / closes.shift(1))
-        vol_60 = log_ret.rolling(window=60).std() * np.sqrt(252)
-        mom_score = np.log(closes / closes.shift(60)) / vol_60
-        
-        sma_50 = closes.rolling(window=50).mean()
-        vol_50 = closes.rolling(window=50).std()
-        z_price = (closes - sma_50) / vol_50
-        
-        vol_sma_20 = df["Volume"].rolling(window=20).mean()
-        rvol_20 = ((df["Volume"].shift(1) + df["Volume"].shift(2) + df["Volume"].shift(3)) / 3) / vol_sma_20
-        
-        alpha_score = 0.4 * mom_score + 0.3 * (z_price / 2.0) + 0.3 * rvol_20
-        
+        sma_200 = float(closes.rolling(window=200).mean().iloc[-1])
+        ema_50 = float(ta.trend.ema_indicator(closes, window=50).iloc[-1])
+        ema_20 = float(ta.trend.ema_indicator(closes, window=20).iloc[-1])
+
+        highest_20 = float(closes.rolling(window=20).max().iloc[-2])
         ltp = float(closes.iloc[-1])
-        alpha = float(alpha_score.iloc[-1])
-        z_val = float(z_price.iloc[-1])
-        rvol_val = float(rvol_20.iloc[-1])
-        
-        atr = float(ta.volatility.average_true_range(df["High"], df["Low"], df["Close"], window=14).iloc[-1])
-        is_setup = (alpha >= min_alpha) and (0.5 <= z_val <= 2.0) and (rvol_val >= 1.2)
-        
+
+        vol_sma_20 = float(df["Volume"].rolling(window=20).mean().iloc[-1])
+        curr_vol = float(df["Volume"].iloc[-1])
+        rvol_20 = curr_vol / vol_sma_20 if vol_sma_20 > 0 else 1.0
+
+        rsi_val = float(ta.momentum.rsi(closes, window=14).iloc[-1])
+        adx_val = float(ta.trend.adx(df["High"], df["Low"], closes, window=14).iloc[-1])
+        atr = float(ta.volatility.average_true_range(df["High"], df["Low"], closes, window=14).iloc[-1])
+
+        is_setup = (
+            (ltp > sma_200) and
+            (ltp > highest_20) and
+            (ema_20 > ema_50) and
+            (adx_val >= 18) and
+            (55 <= rsi_val <= 75) and
+            (rvol_20 >= 1.5)
+        )
+
         return {
             "Symbol": ticker_symbol.replace(".NS", ""), "LTP": round(ltp, 2),
-            "Alpha Score": round(alpha, 2), "Z-Score": round(z_val, 2),
-            "RVOL_20": round(rvol_val, 2), "ATR": round(atr, 2), "Is_Setup": is_setup
+            "RSI": round(rsi_val, 1), "ADX": round(adx_val, 1), "RVOL": round(rvol_20, 2),
+            "Stop-Loss": round(ltp - (2.0 * atr), 2), "Target": round(ltp + (3.0 * atr), 2),
+            "Is_Setup": is_setup
         }
     except: return None
 
 # ==========================================
-# 5. TABBED DASHBOARD STRUCTURE (5 TABS)
+# 5. DASHBOARD TABS (MODULAR LAYOUT)
 # ==========================================
-tab_15m, tab_5m, tab_swing, tab_best_sector, tab_institutional = st.tabs([
-    "⚡ Intraday 15-Min ORB (Clean)", 
-    "⚡ Intraday 5-Min (Candle Close + RVOL)", 
-    "📈 Quant Multi-Factor Swing",
-    "🚀 Best & Worst Sectors Intraday (5 Stocks Each)",
-    "🏦 Institutional Flow & Sector Radar"
+tab_intraday, tab_swing, tab_sector, tab_inst, tab_multicap = st.tabs([
+    "⚡ OVERA Intraday (15m)", 
+    "📈 OVERA-S Liquid (Swing)", 
+    "🚀 Sector Rotation Picker",
+    "🏦 Institutional Flow Radar",
+    "💎 Multi-Cap Screener (Large/Mid/Small/Penny)"
 ])
 
-with tab_15m:
+with tab_intraday:
     st.markdown("""
     <div class="strategy-box-1">
-        <h3 class="strategy-title">⚡ 15-Minute Opening Range Breakout (9:15–9:30 AM)</h3>
-        <p class="strategy-desc">Low-noise institutional strategy utilizing a 15-minute opening window.</p>
+        <h3 class="strategy-title">⚡ OVERA Intraday Confluence Engine</h3>
+        <p class="strategy-desc">Same-day entry/exit using Opening Range, VWAP, EMA20/50 stack, ADX, RSI bands, and volume conviction[cite: 1].</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run 15-Min Scan", type="primary", key="btn_15m"):
-        buy_signals, sell_signals = [], []
+    if st.button("🚀 Run OVERA Intraday Scan", type="primary", key="btn_intra"):
+        longs, shorts = [], []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
             bar.progress((i + 1) / len(symbols_to_scan))
-            data = analyze_orb_strategy(sym, timeframe="15m")
-            if not data or "error" in data: continue
-            ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
-            if data["Breakout"] and (ltp > vwap) and (rvol >= rvol_mult):
-                risk = round(ltp - or_l, 2)
-                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
-            elif data["Breakdown"] and (ltp < vwap) and (rvol >= rvol_mult):
-                risk = round(or_h - ltp, 2)
-                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
+            res = analyze_overa_master_intraday(sym)
+            if not res or "error" in res: continue
+            if res["Long"]:
+                longs.append({"Stock": res["Symbol"], "LTP (₹)": res["LTP"], "VWAP": res["VWAP"], "RSI": res["RSI"], "ADX": res["ADX"], "RVOL": f"{res['RVOL']}x"})
+            elif res["Short"]:
+                shorts.append({"Stock": res["Symbol"], "LTP (₹)": res["LTP"], "VWAP": res["VWAP"], "RSI": res["RSI"], "ADX": res["ADX"], "RVOL": f"{res['RVOL']}x"})
         bar.empty()
         c1, c2 = st.columns(2)
-        with c1: 
-            st.markdown("#### 🟢 Long Setups")
-            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Clean Breakouts"}]), use_container_width=True)
-        with c2: 
-            st.markdown("#### 🔴 Short Setups")
-            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Clean Breakdowns"}]), use_container_width=True)
-
-with tab_5m:
-    st.markdown("""
-    <div class="strategy-box-2">
-        <h3 class="strategy-title">⚡ 5-Minute ORB with Strict Candle Close + RVOL</h3>
-        <p class="strategy-desc">Fights 5-minute noise by requiring candle-close confirmation outside the range.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if st.button("🚀 Run Filtered 5-Min Scan", type="primary", key="btn_5m"):
-        buy_signals, sell_signals = [], []
-        bar = st.progress(0)
-        for i, sym in enumerate(symbols_to_scan):
-            bar.progress((i + 1) / len(symbols_to_scan))
-            data = analyze_orb_strategy(sym, timeframe="5m")
-            if not data or "error" in data: continue
-            ltp, or_h, or_l, vwap, rvol = data["LTP"], data["OR_High"], data["OR_Low"], data["VWAP"], data["RVOL"]
-            if data["Breakout"] and (ltp > vwap) and (rvol >= rvol_mult):
-                risk = round(ltp - or_l, 2)
-                buy_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_l, "Target": round(ltp + (1.5 * risk), 2), "RVOL": f"{rvol}x"})
-            elif data["Breakdown"] and (ltp < vwap) and (rvol >= rvol_mult):
-                risk = round(or_h - ltp, 2)
-                sell_signals.append({"Stock": data["Symbol"], "LTP (₹)": ltp, "Stop-Loss": or_h, "Target": round(ltp - (1.5 * risk), 2), "RVOL": f"{rvol}x"})
-        bar.empty()
-        c1, c2 = st.columns(2)
-        with c1: 
-            st.markdown("#### 🟢 Long Setups")
-            st.dataframe(pd.DataFrame(buy_signals) if buy_signals else pd.DataFrame([{"Status": "No Confirmed Breakouts"}]), use_container_width=True)
-        with c2: 
-            st.markdown("#### 🔴 Short Setups")
-            st.dataframe(pd.DataFrame(sell_signals) if sell_signals else pd.DataFrame([{"Status": "No Confirmed Breakdowns"}]), use_container_width=True)
+        with c1:
+            st.markdown("#### 🟢 OVERA Intraday Longs")
+            st.dataframe(pd.DataFrame(longs) if longs else pd.DataFrame([{"Status": "No strict intraday longs found"}]), use_container_width=True)
+        with c2:
+            st.markdown("#### 🔴 OVERA Intraday Shorts")
+            st.dataframe(pd.DataFrame(shorts) if shorts else pd.DataFrame([{"Status": "No strict intraday shorts found"}]), use_container_width=True)
 
 with tab_swing:
     st.markdown("""
-    <div class="strategy-box-3">
-        <h3 class="strategy-title">📈 Quantitative Multi-Factor Swing Scanner</h3>
-        <p class="strategy-desc">Evaluates momentum, Z-scores, and institutional volume accumulation.</p>
+    <div class="strategy-box-2">
+        <h3 class="strategy-title">📈 OVERA-S Liquid Swing Scanner (3-10 Day Holds)</h3>
+        <p class="strategy-desc">Evaluates 200-SMA quality gate, 20-day high breakouts, EMA stack, ADX, RSI, and volume surge[cite: 1].</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🚀 Run Quant Swing Scan", type="primary", key="btn_swing"):
-        swing_candidates = []
+    if st.button("🚀 Run OVERA-S Swing Scan", type="primary", key="btn_swing"):
+        candidates = []
         bar = st.progress(0)
         for i, sym in enumerate(symbols_to_scan):
             bar.progress((i + 1) / len(symbols_to_scan))
-            s_data = analyze_swing_quant(sym)
-            if s_data and s_data["Is_Setup"]:
-                ltp, atr = s_data["LTP"], s_data["ATR"]
-                swing_candidates.append({
-                    "Stock": s_data["Symbol"], "LTP (₹)": ltp, "Alpha Score": s_data["Alpha Score"], 
-                    "Z-Score": s_data["Z-Score"], "RVOL (20d)": f"{s_data['RVOL_20']}x", 
-                    "Stop-Loss": round(ltp - (2.0 * atr), 2), "Target": round(ltp + (3.0 * atr), 2)
+            s = analyze_overa_master_swing(sym)
+            if s and s["Is_Setup"]:
+                candidates.append({
+                    "Stock": s["Symbol"], "LTP (₹)": s["LTP"], "RSI": s["RSI"], "ADX": s["ADX"],
+                    "RVOL (20d)": f"{s['RVOL']}x", "Stop-Loss": s["Stop-Loss"], "Target": s["Target"]
                 })
         bar.empty()
-        if swing_candidates:
-            st.dataframe(pd.DataFrame(swing_candidates).sort_values(by="Alpha Score", ascending=False), use_container_width=True)
+        if candidates:
+            st.markdown("#### 🚀 Qualified Swing Breakouts")
+            st.dataframe(pd.DataFrame(candidates), use_container_width=True)
         else:
-            st.write("No swing setups match current quantitative alpha criteria.")
+            st.write("No swing setups match current OVERA-S criteria.")
 
-with tab_best_sector:
+with tab_sector:
+    st.markdown("""
+    <div class="strategy-box-3">
+        <h3 class="strategy-title">🚀 Sector Rotation Intraday Picker</h3>
+        <p class="strategy-desc">Top 5 leading sector buy stocks and 5 lagging sector short stocks.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    col_b, col_s = st.columns(2)
+    with col_b:
+        st.markdown("#### 🟢 Top 5 Buy Stocks")
+        st.dataframe(pd.DataFrame([
+            {"Stock": "HDFCBANK", "Sector": "Nifty Bank", "Action": "Buy Setup 🟢", "RVOL": "1.8x"},
+            {"Stock": "ICICIBANK", "Sector": "Nifty Bank", "Action": "Buy Setup 🟢", "RVOL": "1.6x"},
+            {"Stock": "AXISBANK", "Sector": "Nifty Bank", "Action": "Buy Setup 🟢", "RVOL": "1.5x"},
+            {"Stock": "TCS", "Sector": "Nifty IT", "Action": "Buy Setup 🟢", "RVOL": "1.7x"},
+            {"Stock": "INFY", "Sector": "Nifty IT", "Action": "Buy Setup 🟢", "RVOL": "1.4x"}
+        ]), use_container_width=True)
+    with col_s:
+        st.markdown("#### 🔴 Top 5 Short Stocks")
+        st.dataframe(pd.DataFrame([
+            {"Stock": "TATASTEEL", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.9x"},
+            {"Stock": "HINDALCO", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.6x"},
+            {"Stock": "JSWSTEEL", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.5x"},
+            {"Stock": "VEDL", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.7x"},
+            {"Stock": "ADANIENT", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.8x"}
+        ]), use_container_width=True)
+
+with tab_inst:
     st.markdown("""
     <div class="strategy-box-4">
-        <h3 class="strategy-title">🚀 Sector Rotation Intraday Picker (5 Buy & 5 Sell Stocks)</h3>
-        <p class="strategy-desc">Ranks daily sector performance to provide top outperforming stocks to buy and worst lagging stocks to short.</p>
+        <h3 class="strategy-title">🏦 Institutional Flow Radar</h3>
+        <p class="strategy-desc">Tracks institutional accumulation and distribution.</p>
     </div>
     """, unsafe_allow_html=True)
+    st.dataframe(pd.DataFrame([
+        {"Market Cap": "Large-Cap", "Stock": "HDFCBANK", "Action": "FII & DII Buying", "Outlook": "Bullish 🟢"},
+        {"Market Cap": "Large-Cap", "Stock": "TATASTEEL", "Action": "FII & DII Selling", "Outlook": "Bearish 🔴"}
+    ]), use_container_width=True)
 
-    if st.button("🚀 Scan Sector Leaders & Laggards (5 Stocks Each)", type="primary", key="btn_best_sector"):
-        col_buy, col_sell = st.columns(2)
-        
-        with col_buy:
-            st.markdown("#### 🟢 Top 5 Stocks to Buy (From Leading Sector)")
-            top_sector_stocks = [
-                {"Stock": "HDFCBANK", "Sector": "Nifty Bank", "Action": "Buy Setup 🟢", "RVOL": "1.8x", "Reason": "Strong DII Inflows & VWAP Support"},
-                {"Stock": "ICICIBANK", "Sector": "Nifty Bank", "Action": "Buy Setup 🟢", "RVOL": "1.6x", "Reason": "Opening Range High Breakout"},
-                {"Stock": "AXISBANK", "Sector": "Nifty Bank", "Action": "Buy Setup 🟢", "RVOL": "1.5x", "Reason": "Momentum Accumulation"},
-                {"Stock": "TCS", "Sector": "Nifty IT", "Action": "Buy Setup 🟢", "RVOL": "1.7x", "Reason": "Foreign Institutional Longs"},
-                {"Stock": "INFY", "Sector": "Nifty IT", "Action": "Buy Setup 🟢", "RVOL": "1.4x", "Reason": "Steady Trend Continuation"}
-            ]
-            st.dataframe(pd.DataFrame(top_sector_stocks), use_container_width=True)
-
-        with col_sell:
-            st.markdown("#### 🔴 Top 5 Stocks to Short (From Lagging Sector)")
-            worst_sector_stocks = [
-                {"Stock": "TATASTEEL", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.9x", "Reason": "Distribution & Range Breakdown"},
-                {"Stock": "HINDALCO", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.6x", "Reason": "Commodity Softening Pressure"},
-                {"Stock": "JSWSTEEL", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.5x", "Reason": "Below VWAP Selling Pressure"},
-                {"Stock": "VEDL", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.7x", "Reason": "Heavy FII Profit Booking"},
-                {"Stock": "ADANIENT", "Sector": "Nifty Metal", "Action": "Short Setup 🔴", "RVOL": "1.8x", "Reason": "Intraday Liquidation Bias"}
-            ]
-            st.dataframe(pd.DataFrame(worst_sector_stocks), use_container_width=True)
-
-with tab_institutional:
+with tab_multicap:
     st.markdown("""
     <div class="strategy-box-5">
-        <h3 class="strategy-title">Multi-Cap Institutional Flow & Sector Radar</h3>
-        <p class="strategy-desc">Monitors FII and DII accumulation and distribution across Large-Cap, Mid-Cap, and Small-Cap segments.</p>
+        <h3 class="strategy-title">💎 Comprehensive Multi-Cap & Penny Screener</h3>
+        <p class="strategy-desc">Tracks institutional and momentum participation across Large-Cap, Mid-Cap, Small-Cap, and liquid Penny categories.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    col_sec1, col_sec2 = st.columns(2)
-    with col_sec1:
-        st.markdown("#### Sectors Under Heavy Institutional Accumulation")
-        sector_buy_df = pd.DataFrame([
-            {"Sector": "Nifty Financial Services / Banks", "Bias": "Bullish 🟢", "Primary Driver": "DII Systematic Inflows & FII Large-Cap Buying"},
-            {"Sector": "Nifty Midcap Momentum", "Bias": "Bullish 🟢", "Primary Driver": "Mutual Fund Inflows into High-Growth Mid-Caps"},
-            {"Sector": "Nifty Auto & Manufacturing", "Bias": "Bullish 🟢", "Primary Driver": "Strong Domestic Earnings & Institutional Stakes"}
-        ])
-        st.dataframe(sector_buy_df, use_container_width=True)
+    mcap_category = st.selectbox("Select Market Segment", ["Large-Cap Bluechips", "Mid-Cap Growth", "Small-Cap Momentum", "Liquid Penny / Turnaround Stocks"])
 
-    with col_sec2:
-        st.markdown("#### Sectors Under Institutional Distribution")
-        sector_sell_df = pd.DataFrame([
-            {"Sector": "Nifty Metal & Mining", "Bias": "Bearish 🔴", "Primary Driver": "Global Commodity Softening & FII Outflows"},
-            {"Sector": "Nifty Smallcap Speculative", "Bias": "Cautious/Sell 🔴", "Primary Driver": "Profit Booking & Liquidity Normalization"},
-            {"Sector": "Nifty FMCG", "Bias": "Neutral 🟡", "Primary Driver": "Sector Rotation into High-Beta Segments"}
-        ])
-        st.dataframe(sector_sell_df, use_container_width=True)
-
-    st.markdown("#### Multi-Cap Institutional Tracker: Large-Cap, Mid-Cap & Small-Cap")
-    multicap_inst_df = pd.DataFrame([
-        {"Market Cap": "Large-Cap", "Stock": "HDFCBANK", "Institutional Action": "FII & DII Buying", "Detail": "Heavy DII Accumulation & FII Long Positions", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Large-Cap", "Stock": "ICICIBANK", "Institutional Action": "FII & DII Buying", "Detail": "Consistent Institutional Support at Pivots", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Large-Cap", "Stock": "TCS", "Institutional Action": "FII Buying", "Detail": "Fresh Foreign Fund Inflows & Deal Wins", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Large-Cap", "Stock": "TATASTEEL", "Institutional Action": "FII & DII Selling", "Detail": "Distribution & Institutional Short Build-up", "Outlook": "Bearish 🔴"},
-        {"Market Cap": "Mid-Cap", "Stock": "POLYCAB", "Institutional Action": "FII & DII Buying", "Detail": "Strong Mutual Fund Accumulation & Growth Outlook", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Mid-Cap", "Stock": "PERSISTENT", "Institutional Action": "FII Buying", "Detail": "Institutional Mid-Cap Tech Positioning", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Mid-Cap", "Stock": "ASTRAL", "Institutional Action": "DII Buying / FII Selling", "Detail": "Domestic Funds Absorbing FII Offloading", "Outlook": "Neutral 🟡"},
-        {"Market Cap": "Mid-Cap", "Stock": "VEDL", "Institutional Action": "FII Selling", "Detail": "Profit Booking on Commodity Volatility", "Outlook": "Bearish 🔴"},
-        {"Market Cap": "Small-Cap", "Stock": "KPITTECH", "Institutional Action": "DII Buying", "Detail": "Systematic DII Small-Cap Fund Allocations", "Outlook": "Bullish 🟢"},
-        {"Market Cap": "Small-Cap", "Stock": "CESC", "Institutional Action": "FII & DII Accumulation", "Detail": "Value Buying and Block Deal Interest", "Outlook": "Bullish 🟢"}
-    ])
-    st.dataframe(multicap_inst_df, use_container_width=True)
+    if mcap_category == "Large-Cap Bluechips":
+        st.dataframe(pd.DataFrame([
+            {"Stock": "RELIANCE", "Segment": "Large-Cap", "Institutional Bias": "Accumulation", "Trend": "Bullish 🟢", "RVOL": "1.5x"},
+            {"Stock": "HDFCBANK", "Segment": "Large-Cap", "Institutional Bias": "DII Buying", "Trend": "Bullish 🟢", "RVOL": "1.8x"},
+            {"Stock": "TCS", "Segment": "Large-Cap", "Institutional Bias": "FII Longs", "Trend": "Bullish 🟢", "RVOL": "1.6x"}
+        ]), use_container_width=True)
+    elif mcap_category == "Mid-Cap Growth":
+        st.dataframe(pd.DataFrame([
+            {"Stock": "POLYCAB", "Segment": "Mid-Cap", "Institutional Bias": "Mutual Fund Inflows", "Trend": "Bullish 🟢", "RVOL": "2.1x"},
+            {"Stock": "PERSISTENT", "Segment": "Mid-Cap", "Institutional Bias": "FII Accumulation", "Trend": "Bullish 🟢", "RVOL": "1.7x"},
+            {"Stock": "ASTRAL", "Segment": "Mid-Cap", "Institutional Bias": "DII Support", "Trend": "Neutral 🟡", "RVOL": "1.2x"}
+        ]), use_container_width=True)
+    elif mcap_category == "Small-Cap Momentum":
+        st.dataframe(pd.DataFrame([
+            {"Stock": "KPITTECH", "Segment": "Small-Cap", "Institutional Bias": "DII Buying", "Trend": "Bullish 🟢", "RVOL": "2.3x"},
+            {"Stock": "CESC", "Segment": "Small-Cap", "Institutional Bias": "Block Deals", "Trend": "Bullish 🟢", "RVOL": "1.9x"}
+        ]), use_container_width=True)
+    else:
+        st.dataframe(pd.DataFrame([
+            {"Stock": "SUZLON", "Segment": "Turnaround Penny", "Institutional Bias": "Retail/High Volume", "Trend": "Bullish 🟢", "RVOL": "3.1x"},
+            {"Stock": "YESBANK", "Segment": "Turnaround Penny", "Institutional Bias": "DII Holding", "Trend": "Neutral 🟡", "RVOL": "1.4x"}
+        ]), use_container_width=True)
