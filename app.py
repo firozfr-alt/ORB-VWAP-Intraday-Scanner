@@ -21,7 +21,10 @@ ticker = st.sidebar.text_input(
 )
 strategy_tab = st.sidebar.selectbox(
     "Select Strategy Module",
-    ["Intraday (5m/15m ORB + XGBoost)", "Swing Trading (Daily EMA & RRG Pullback)"],
+    [
+        "Intraday (5m/15m ORB + XGBoost)",
+        "Swing Trading (Daily EMA & RRG Pullback)",
+    ],
 )
 
 # ==========================================
@@ -32,7 +35,9 @@ strategy_tab = st.sidebar.selectbox(
 def run_intraday_strategy(ticker_symbol):
   st.subheader(f"⏱️ Intraday 5m & 15m Analysis: {ticker_symbol}")
 
-  with st.spinner("Fetching intraday data and processing ML filters..."):
+  with st.spinner(
+      "Scanning broader liquid/midcap universe and processing ML filters..."
+  ):
     # Fetch 5-minute intraday data
     df = yf.download(ticker_symbol, interval="5m", period="5d", progress=False)
 
